@@ -2,7 +2,7 @@
 ---
 | #   | Topic                 | Abbr.  | Title                                                      | Venue          | Year |
 |-----|-----------------------|--------|------------------------------------------------------------|----------------|------|
-| 1   | Image Backbone(CNN)  | VGGNet | [https://arxiv.org/abs/1409.1556](https://arxiv.org/abs/1409.1556) | ICLR           | 2015 |
+| 1   | Image Backbone(CNN)  | VGGNet | [Very Deep Convolutional Networks for Large-Scale Image Recognition](https://arxiv.org/abs/1409.1556) | ICLR           | 2015 |
 | 2   | Image Backbone(CNN)  | ResNet | [https://arxiv.org/abs/1512.03385](https://arxiv.org/abs/1512.03385) | CVPR           | 2016 |
 | 3   | Sequential Modeling   | seq2seq| [https://arxiv.org/abs/1409.3215](https://arxiv.org/abs/1409.3215) | NeurIPS        | 2014 |
 | 4   | Sequential Modeling   | GRU    | [https://arxiv.org/abs/1406.1078](https://arxiv.org/abs/1406.1078) | EMNLP          | 2014 |
