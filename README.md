@@ -3,13 +3,13 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 
 
 ## Team Members
-| Github ID | Name | email  | Phone num.  | School. |
-|:--------: |:----:|:--------:|:---------:|:----:|
-| three0-s  | Yewon Lim | lim473@purdue.edu | +1 (765) 412-6118 | Yonsei Univ. C.S.|
-| Haileyyyyyyyy | Dayeon Kim  | kim4732@purdue.edu | +1 (765) 694-5879 | Sookmyung W. Univ. S.C. |
-| jeahoyang | Jaeho Yang | yang2731@purdue.edu | +1 (765) 767-3162 |  Yonsei Univ. C.E. |
-| sunkite3-3 | Haeyeon Kim | kim4733@purdue.edu | +1 (765) 479-2799 |  Kyonggi Univ. AI.C.E.  |
-| uujeonglee | Yoojeong lee | lee5202@purdue.edu | +1 (765) 767-2172 | Sookmyung W. Univ. IT.E. |
+| Github ID | Name | email  | Phone num.  | School. | Role | 
+|:--------: |:----:|:--------:|:---------:|:----:| :----:|
+| three0-s  | Yewon Lim | lim473@purdue.edu | +1 (765) 412-6118 | Yonsei Univ. C.S.| Director |
+| Haileyyyyyyyy | Dayeon Kim  | kim4732@purdue.edu | +1 (765) 694-5879 | Sookmyung W. Univ. S.C. | Planning Leader |
+| jeahoyang | Jaeho Yang | yang2731@purdue.edu | +1 (765) 767-3162 |  Yonsei Univ. C.E. | Testing Leader |
+| sunkite3-3 | Haeyeon Kim | kim4733@purdue.edu | +1 (765) 479-2799 |  Kyonggi Univ. AI.C.E.  | Documentation Leader |
+| uujeonglee | Yoojeong lee | lee5202@purdue.edu | +1 (765) 767-2172 | Sookmyung W. Univ. IT.E. | QA Leader |
 
 **Commit Convention**
 
