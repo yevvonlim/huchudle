@@ -16,13 +16,13 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 | #   | Date    | Time | Topic            | Reviewer     | Note                                    |
 |-----|---------|------|------------------|--------------|-----------------------------------------|
 | 1   | 3/20 Wed| 4:00 | VGG          | Yewon Lim    | [VGG](#note1)               |
-| 2   | 3/21 Thu| 9:00 | ResNet           | Haeyeon Kim   | [ResNet](#note2)               |
-| 3   | 3/22 Fri| 9:00 | seq2seq          | Yoojeong Lee   | [Link to Note 3](#note3)               |
-| 4   | 3/25 Mon| 4:00 | GRU, Transformer| Dayeon Kim, Jaeho Yang  | [Link to Note 4](#note4)               |
-| 5   | 3/26 Tue| 9:00 | ViT, MAE         | Haeyeon Kim, Yoojeong Lee | [Link to Note 5](#note5)               |
-| 6   | 3/27 Wed| 4:00 | VAE, GAN         | Dayeon Kim, Jaeho Yang   | [Link to Note 6](#note6)               |
-| 7   | 3/28 Thu| 9:00 | DDPM, DDIM       | Haeyeon Kim, Yoojeong Lee   | [Link to Note 7](#note7)               |
-| 8   | 3/29 Fri| 9:00 | DiT , NaViT      | Dayeon Kim, Jaeho Yang  | [Link to Note 8](#note8)               | 
+| 2   | 3/21 Thu| 14:00 | ResNet           | Haeyeon Kim   | [ResNet](#note2)               |
+| 3   | 3/22 Fri| 15:30 | seq2seq          | Yoojeong Lee   | [Link to Note 3](#note3)               |
+| 4   | 3/25 Mon| 0:00 | GRU, Transformer| Dayeon Kim, Jaeho Yang  | [Link to Note 4](#note4)               |
+| 5   | 3/26 Tue| 0:00 | ViT, MAE         | Haeyeon Kim, Yoojeong Lee | [Link to Note 5](#note5)               |
+| 6   | 3/27 Wed| 0:00 | VAE, GAN         | Dayeon Kim, Jaeho Yang   | [Link to Note 6](#note6)               |
+| 7   | 3/28 Thu| 0:00 | DDPM, DDIM       | Haeyeon Kim, Yoojeong Lee   | [Link to Note 7](#note7)               |
+| 8   | 3/29 Fri| 0:00 | DiT , NaViT      | Dayeon Kim, Jaeho Yang  | [Link to Note 8](#note8)               | 
 
 
 **Commit Convention**
