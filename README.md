@@ -19,7 +19,7 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 | 2   | 3/21 Thu| 14:00 | ResNet           | Haeyeon Kim   | [ResNet](https://github.com/three0-s/huchudle/blob/develop/logs/notes/ResNet.pdf)               |
 | 3   | 3/22 Fri| 15:30 | seq2seq          | Yoojeong Lee   | [seq2seq](https://github.com/three0-s/huchudle/blob/develop/logs/notes/seq2seq.pdf)               |
 | 4   | 3/25 Mon| 15:30 | GRU | Dayeon Kim  | [GRU](#note4)               |
-| 5   | 3/26 Tue| 13:30 | Transformer        | Jaeho Yang | [Transformer](#note5)               |
+| 5   | 3/26 Tue| 13:30 | Transformer        | Jaeho Yang | [Transformer](https://github.com/three0-s/huchudle/blob/develop/logs/notes/Transformer.pdf)               |
 | 6   | 3/27 Wed| 15:30 | ViT       | Haeyeon Kim | [ViT](#note5)        
 | 7   | 3/28 Thu| 15:30 |  MAE         | Yoojeong Lee | [MAE ](#note5)        |
 | 8   | 3/29 Fri| 15:30 | VAE         | Yewon Lim  | [VAE ](#note5)               |
