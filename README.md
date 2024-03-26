@@ -17,17 +17,17 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 |-----|---------|------|------------------|--------------|-----------------------------------------|
 | 1   | 3/20 Wed| 4:00 | VGG          | Yewon Lim    | [VGG](#note1)               |
 | 2   | 3/21 Thu| 14:00 | ResNet           | Haeyeon Kim   | [ResNet](https://github.com/three0-s/huchudle/blob/develop/logs/notes/ResNet.pdf)               |
-| 3   | 3/22 Fri| 15:30 | seq2seq          | Yoojeong Lee   | [Link to Note 3](https://github.com/three0-s/huchudle/blob/develop/logs/notes/seq2seq.pdf)               |
-| 4   | 3/25 Mon| 15:30 | GRU | Dayeon Kim  | [Link to Note 4](#note4)               |
-| 5   | 3/26 Tue| 13:30 | Transformer        | Jaeho Yang | [Link to Note 5](#note5)               |
-| 6   | 3/27 Wed| 15:30 | ViT       | Haeyeon Kim | [Link to Note 5](#note5)        
-| 7   | 3/28 Thu| 15:30 |  MAE         | Yoojeong Lee | [Link to Note 5](#note5)        |
-| 8   | 3/29 Fri| 15:30 | VAE         | Yewon Lim  | [Link to Note 5](#note5)               |
-| 9   | 4/1 Mon| 15:30 | GAN         | Dayeon Kim  | [Link to Note 6](#note6)               |
-| 10   | 4/2 Tue| 15:30 | DDPM       | Jaeho Yang   | [Link to Note 7](#note7)               |
-| 11   | 4/3 Wed| 15:30 | DDIM      | Haeyeon Kim  | [Link to Note 8](#note8)               | 
-| 12   | 4/4 Thu| 15:30 | DiT      | Yoojeong Lee  | [Link to Note 8](#note8)               | 
-| 13 | 4/5 Fri| 15:30 | NaViT      | Dayeon Kim  | [Link to Note 8](#note8)               | 
+| 3   | 3/22 Fri| 15:30 | seq2seq          | Yoojeong Lee   | [seq2seq](https://github.com/three0-s/huchudle/blob/develop/logs/notes/seq2seq.pdf)               |
+| 4   | 3/25 Mon| 15:30 | GRU | Dayeon Kim  | [GRU](#note4)               |
+| 5   | 3/26 Tue| 13:30 | Transformer        | Jaeho Yang | [Transformer](#note5)               |
+| 6   | 3/27 Wed| 15:30 | ViT       | Haeyeon Kim | [ViT](#note5)        
+| 7   | 3/28 Thu| 15:30 |  MAE         | Yoojeong Lee | [MAE ](#note5)        |
+| 8   | 3/29 Fri| 15:30 | VAE         | Yewon Lim  | [VAE ](#note5)               |
+| 9   | 4/1 Mon| 15:30 | GAN         | Dayeon Kim  | [GAN](#note6)               |
+| 10   | 4/2 Tue| 15:30 | DDPM       | Jaeho Yang   | [DDPM](#note7)               |
+| 11   | 4/3 Wed| 15:30 | DDIM      | Haeyeon Kim  | [DDIM](#note8)               | 
+| 12   | 4/4 Thu| 15:30 | DiT      | Yoojeong Lee  | [DiT](#note8)               | 
+| 13 | 4/5 Fri| 15:30 | NaViT      | Dayeon Kim  | [NaViT](#note8)               | 
 
 
 **Commit Convention**
