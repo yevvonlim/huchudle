@@ -18,11 +18,11 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 | 1   | 3/20 Wed| 4:00 | VGG          | Yewon Lim    | [VGG](#note1)               |
 | 2   | 3/21 Thu| 14:00 | ResNet           | Haeyeon Kim   | [ResNet](https://github.com/three0-s/huchudle/blob/develop/logs/notes/ResNet.pdf)               |
 | 3   | 3/22 Fri| 15:30 | seq2seq          | Yoojeong Lee   | [seq2seq](https://github.com/three0-s/huchudle/blob/develop/logs/notes/seq2seq.pdf)               |
-| 4   | 3/25 Mon| 15:30 | GRU | Dayeon Kim  | [GRU](#note4)               |
+| 4   | 3/25 Mon| 15:30 | GRU | Dayeon Kim  | [GRU](https://github.com/three0-s/huchudle/blob/develop/logs/notes/GRU.pdf)               |
 | 5   | 3/26 Tue| 13:30 | Transformer        | Jaeho Yang | [Transformer](https://github.com/three0-s/huchudle/blob/develop/logs/notes/Transformer.pdf)               |
-| 6   | 3/27 Wed| 15:30 | ViT       | Haeyeon Kim | [ViT](#note5)        
+| 6   | 3/27 Wed| 15:30 | ViT       | Haeyeon Kim | [ViT](https://github.com/three0-s/huchudle/blob/develop/logs/notes/ViT.pdf)        
 | 7   | 3/28 Thu| 15:30 |  MAE         | Yoojeong Lee | [MAE ](#note5)        |
-| 8   | 4/1 Mon| 15:30 | VAE         | Yewon Lim  | [VAE ](#note5)               |
+| 8   | 4/1 Mon| 15:30 | VAE         | Yewon Lim  | [VAE ](https://github.com/three0-s/huchudle/blob/develop/logs/notes/VAE.pdf)               |
 | 9   | 4/8 Mon| 15:30 | GAN         | Dayeon Kim  | [GAN](#note6)               |
 | 10   | 4/9 Tue| 15:30 | DDPM       | Jaeho Yang   | [DDPM](#note7)               |
 | 11   | 4/10 Wed| 15:30 | DDIM      | Haeyeon Kim  | [DDIM](#note8)               | 
