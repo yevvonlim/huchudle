@@ -22,12 +22,12 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 | 5   | 3/26 Tue| 13:30 | Transformer        | Jaeho Yang | [Transformer](https://github.com/three0-s/huchudle/blob/develop/logs/notes/Transformer.pdf)               |
 | 6   | 3/27 Wed| 15:30 | ViT       | Haeyeon Kim | [ViT](#note5)        
 | 7   | 3/28 Thu| 15:30 |  MAE         | Yoojeong Lee | [MAE ](#note5)        |
-| 8   | 3/29 Fri| 15:30 | VAE         | Yewon Lim  | [VAE ](#note5)               |
-| 9   | 4/1 Mon| 15:30 | GAN         | Dayeon Kim  | [GAN](#note6)               |
-| 10   | 4/2 Tue| 15:30 | DDPM       | Jaeho Yang   | [DDPM](#note7)               |
-| 11   | 4/3 Wed| 15:30 | DDIM      | Haeyeon Kim  | [DDIM](#note8)               | 
-| 12   | 4/4 Thu| 15:30 | DiT      | Yoojeong Lee  | [DiT](#note8)               | 
-| 13 | 4/5 Fri| 15:30 | NaViT      | Dayeon Kim  | [NaViT](#note8)               | 
+| 8   | 4/1 Mon| 15:30 | VAE         | Yewon Lim  | [VAE ](#note5)               |
+| 9   | 4/8 Mon| 15:30 | GAN         | Dayeon Kim  | [GAN](#note6)               |
+| 10   | 4/9 Tue| 15:30 | DDPM       | Jaeho Yang   | [DDPM](#note7)               |
+| 11   | 4/10 Wed| 15:30 | DDIM      | Haeyeon Kim  | [DDIM](#note8)               | 
+| 12   | 4/11 Thu| 15:30 | DiT      | Yoojeong Lee  | [DiT](#note8)               | 
+| 13 | 4/12 Fri| 15:30 | NaViT      | Dayeon Kim  | [NaViT](#note8)               | 
 
 
 **Commit Convention**
