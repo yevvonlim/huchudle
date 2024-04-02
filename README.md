@@ -30,6 +30,23 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 | 13 | 4/12 Fri| 15:30 | NaViT      | Dayeon Kim  | [NaViT](#note8)               | 
 
 
+## Project Teams
+| Team Number | Name 1 | Name 2  | Name 3  | GPU Number |
+|:--------: |:----:|:--------:|:---------:|:---------:|
+| 1 | Dayeon Kim | Yoojeong Lee | Jaden Soroka | 0|
+| 2 | Yewon Lim | Colten Glover |  | 1|
+| 3 | Haeyeon Kim | Jaeho Yang | Justin Allange | 2|
+
+
+## Project Schedules
+| #   | Date    | Goal | 
+|-----|---------|------|
+| 1   | 3/28 - 3/29 | Download Image Dataset which has text Description & Review DiT model  |
+| 2   | 4/1 - 4/4 | Use text embedding from stable diffusion model to make Dit so that it can get text input  |
+| 3   | 4/5 | Final code review & Train DiT with our data |
+| 4   | 4/8 |  |
+| 5   | 4/9 |  |
+
 **Commit Convention**
 
 ```
