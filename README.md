@@ -42,7 +42,7 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 | #   | Date    | Goal | 
 |-----|---------|------|
 | 1   | 3/28 - 3/29 | Download Image Dataset which has text Description & Review DiT model  |
-| 2   | 4/1 - 4/4 | Use text embedding from stable diffusion model to make Dit so that it can get text input  |
+| 2   | 4/1 - 4/4 | Use text embedding from stable diffusion model to make Dit so that it can get text input & write Baseline code  |
 | 3   | 4/5 | Final code review & Train DiT with our data |
 | 4   | 4/8 |  |
 | 5   | 4/9 |  |
