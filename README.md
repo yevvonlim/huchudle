@@ -1,1 +1,1 @@
-Hello, World !
+Daily Working Log  
