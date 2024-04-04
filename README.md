@@ -1,6 +1,3 @@
-
-### [Daily Working Log](https://github.com/three0-s/huchudle/blob/feature/haeyeon/logs/master.md) 
-
 # Resolution-Free Human Image Generation and Control
 We aim to build an image generation model that builds upon DiT and Patch n' Pack, which can generate human images with high resolution and control over the generated images. 
 
@@ -52,4 +49,3 @@ We aim to build an image generation model that builds upon DiT and Patch n' Pack
 # ex) Fixes: #47 Related to: #32, #21 
 
 ```
-
