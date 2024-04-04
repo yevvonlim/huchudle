@@ -1,7 +1,7 @@
 # Daily Working Log
 | Date | Log |
 |:---:|:---:|
-|4/3|[Log](https://github.com/three0-s/huchudle/blob/feature/haeyeon/logs/Daily%20Working%20Log%20/4.3.md)|
+|4/3|[Log](logs/Daily%20Working%20Log%20/4.3.md)|
 |4/4|Log|
 |4/5|Log|
 |4/8|Log|
