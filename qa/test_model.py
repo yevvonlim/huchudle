@@ -16,9 +16,10 @@ def test_encode(pipeline: DiTTextPipeLine,
                 negative_prompt = None,
                 ):
     try:
-        cond, uncond = pipeline.encode_prompt(prompt=prompt,
+        cond, uncond = pipeline.encode_prompt(device='cpu', 
+                               prompt=prompt,
                                num_images_per_prompt=num_images_per_prompt,
-                               do_classifier_guidance=do_classifier_guidance,
+                               do_classifier_free_guidance=do_classifier_guidance,
                                negative_prompt=negative_prompt)
         out_dict = {"output": (cond, uncond), "pass": True}
         return out_dict
@@ -54,16 +55,16 @@ if __name__ == "__main__":
     }
     
     model = DiTTextPipeLine(
-        vae = AutoencoderKL.from_pretrained("stabilityai/stable-diffusion-2/vae"),
-        text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2/text_encoder"),
-        tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-2/tokenizer"),
+        vae = AutoencoderKL.from_pretrained("stabilityai/stable-diffusion-2", subfolder="vae"),
+        text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2", subfolder="text_encoder"),
+        tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-2", subfolder="tokenizer"),
         transformer = Transformer2DModel.from_config(transformer_cfg_dict),
         scheduler = KarrasDiffusionSchedulers(1),
         feature_extractor= CLIPImageProcessor(),
     )
     prompt = "a cat"
     num_images_per_prompt = 1
-    do_classifier_guidance = False
+    do_classifier_guidance = True
     negative_prompt = None
     res = test_encode(model, prompt, num_images_per_prompt, do_classifier_guidance, negative_prompt)
-    print(res)
+    print(res['output'][0].shape, res['output'], res['pass'])
