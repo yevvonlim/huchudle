@@ -1,1 +1,91 @@
-Hello, World !
+
+### [Daily Working Log](logs/master.md) 
+
+# Resolution-Free Human Image Generation and Control
+We aim to build an image generation model that builds upon DiT and Patch n' Pack, which can generate human images with high resolution and control over the generated images. 
+
+
+## Team Members
+| Github ID | Name | email  | Phone num.  | School. | Role | 
+|:--------: |:----:|:--------:|:---------:|:----:| :----:|
+| three0-s  | Yewon Lim | lim473@purdue.edu | +1 (765) 412-6118 | Yonsei Univ. C.S.| Director |
+| Haileyyyyyyyy | Dayeon Kim  | kim4732@purdue.edu | +1 (765) 694-5879 | Sookmyung W. Univ. S.C. | Planning Leader |
+| jeahoyang | Jaeho Yang | yang2731@purdue.edu | +1 (765) 767-3162 |  Yonsei Univ. C.E. | Testing Leader |
+| sunkite3-3 | Haeyeon Kim | kim4733@purdue.edu | +1 (765) 479-2799 |  Kyonggi Univ. AI.C.E.  | Documentation Leader |
+| uujeonglee | Yoojeong lee | lee5202@purdue.edu | +1 (765) 767-2172 | Sookmyung W. Univ. IT.E. | QA Leader |
+
+
+## Study Plans
+| #   | Date    | Time | Topic            | Reviewer     | Note                                    |
+|-----|---------|------|------------------|--------------|-----------------------------------------|
+| 1   | 3/20 Wed| 4:00 | VGG          | Yewon Lim    | [VGG](#note1)               |
+| 2   | 3/21 Thu| 14:00 | ResNet           | Haeyeon Kim   | [ResNet](https://github.com/three0-s/huchudle/blob/develop/logs/notes/ResNet.pdf)               |
+| 3   | 3/22 Fri| 15:30 | seq2seq          | Yoojeong Lee   | [seq2seq](https://github.com/three0-s/huchudle/blob/develop/logs/notes/seq2seq.pdf)               |
+| 4   | 3/25 Mon| 15:30 | GRU | Dayeon Kim  | [GRU](https://github.com/three0-s/huchudle/blob/develop/logs/notes/GRU.pdf)               |
+| 5   | 3/26 Tue| 13:30 | Transformer        | Jaeho Yang | [Transformer](https://github.com/three0-s/huchudle/blob/develop/logs/notes/Transformer.pdf)               |
+| 6   | 3/27 Wed| 15:30 | ViT       | Haeyeon Kim | [ViT](https://github.com/three0-s/huchudle/blob/develop/logs/notes/ViT.pdf)        
+| 7   | 3/28 Thu| 15:30 |  MAE         | Yoojeong Lee | [MAE ](#note5)        |
+| 8   | 4/1 Mon| 15:30 | VAE         | Yewon Lim  | [VAE ](https://github.com/three0-s/huchudle/blob/develop/logs/notes/VAE.pdf)               |
+| 9   | 4/8 Mon| 15:30 | GAN         | Dayeon Kim  | [GAN](#note6)               |
+| 10   | 4/9 Tue| 15:30 | DDPM       | Jaeho Yang   | [DDPM](#note7)               |
+| 11   | 4/10 Wed| 15:30 | DDIM      | Haeyeon Kim  | [DDIM](#note8)               | 
+| 12   | 4/11 Thu| 15:30 | DiT      | Yoojeong Lee  | [DiT](#note8)               | 
+| 13 | 4/12 Fri| 15:30 | NaViT      | Dayeon Kim  | [NaViT](#note8)               | 
+
+
+## Project Teams
+| Team Number | Name 1 | Name 2  | Name 3  | GPU Number |
+|:--------: |:----:|:--------:|:---------:|:---------:|
+| 1 | Dayeon Kim | Yoojeong Lee | Jaden Soroka | 0|
+| 2 | Yewon Lim | Colten Glover |  | 1|
+| 3 | Haeyeon Kim | Jaeho Yang | Justin Allange | 2|
+
+
+## Project Schedules
+| #   | Date    | Goal | 
+|-----|---------|------|
+| 1   | 3/28 - 3/29 | Download Image Dataset which has text Description & Review DiT model  |
+| 2   | 4/1 - 4/4 | Use text embedding from stable diffusion model to make Dit so that it can get text input & write Baseline code  |
+| 3   | 4/5 | Final code review & Train DiT with our data |
+| 4   | 4/8 |  |
+| 5   | 4/9 |  |
+
+**Commit Convention**
+
+```
+# Write the title below up to 50 characters: ex) Feat: Add Key mapping  
+# Write the body below  
+# Write the footer below: ex) Github issue #23  
+
+# --- commit end ---  
+# <type> list
+# feat : function (new feature)  
+# fix: bug (bug fix)  
+# refactor : refactoring  
+# design: change user UI design, such as CSS, etc.  
+# comment: add and change necessary comments  
+# style : style (code format, add semicolon: no change in business logic)  
+# docs: Modify documentation (add, modify, delete documentation, README)  
+# test : tests (add, modify, delete test code: no changes to business logic)  
+# chore: miscellaneous changes (build script modifications, assets, package manager, etc.)  
+# init : Initial creation  
+# rename : file or folder renaming or moving only  
+# remove : if the only action performed is to delete a file  
+# ------------------  
+# capitalize the first letter of the title  
+# Title is a command statement  
+# No periods (.) at the end of the title  
+# Separate title and body by a single line  
+# The body explains the "what" and "why" rather than the "how".  
+# Separate multi-line messages in the body with a "-"  
+# ------------------  
+# <Footer>  
+# optioanl not required  
+# Fixes: issue is being fixed (if not already resolved)  
+# Resolves: used when the issue has been resolved  
+# Ref: used when there is an issue to refer to  
+# Related to : Issue number related to this commit (if not already resolved)  
+# ex) Fixes: #47 Related to: #32, #21 
+
+```
+
