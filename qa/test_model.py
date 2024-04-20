@@ -3,8 +3,9 @@ from diffusers import (DiTPipeline,
                 StableDiffusionPipeline, 
                 AutoencoderKL,
                 Transformer2DModel,
+                DDIMScheduler,
                 )
-from diffusers.schedulers import KarrasDiffusionSchedulers
+
 from transformers import CLIPTextModel, CLIPTokenizer,CLIPImageProcessor, CLIPVisionModelWithProjection
 from diffusers.pipelines.pipeline_utils import ImagePipelineOutput
 
@@ -27,7 +28,19 @@ def test_encode(pipeline: DiTTextPipeLine,
     except Exception as e:
         out_dict = {"output": e, "pass": False}
         return out_dict
+
+
+def test_pipeline(pipeline: DiTTextPipeLine,
+                  prompt: str,
+                  ):
+    try:
+        img = pipeline(prompt=prompt, output_type='tensor')
+        out_dict = {"output": img, "pass": True}
+        return out_dict
     
+    except Exception as e:
+        out_dict = {"output": e, "pass": False}
+        return out_dict
 
 if __name__ == "__main__":
     transformer_cfg_dict = {
@@ -36,14 +49,14 @@ if __name__ == "__main__":
         "activation_fn": "gelu-approximate",
         "attention_bias": True,
         "attention_head_dim": 72,
-        "cross_attention_dim": None,
+        "cross_attention_dim": 1024,
         "dropout": 0.0,
         "in_channels": 4,
         "norm_elementwise_affine": False,
         "norm_num_groups": 32,
-        "norm_type": "ada_norm_zero",
+        "norm_type": "ada_norm",
         "num_attention_heads": 16,
-        "num_embeds_ada_norm": 1000,
+        "num_embeds_ada_norm": 1000, # we use 1000 time steps
         "num_layers": 28,
         "num_vector_embeds": None,
         "only_cross_attention": False,
@@ -59,12 +72,14 @@ if __name__ == "__main__":
         text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2", subfolder="text_encoder"),
         tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-2", subfolder="tokenizer"),
         transformer = Transformer2DModel.from_config(transformer_cfg_dict),
-        scheduler = KarrasDiffusionSchedulers(1),
+        scheduler = DDIMScheduler(),
         feature_extractor= CLIPImageProcessor(),
     )
     prompt = "a cat"
     num_images_per_prompt = 1
     do_classifier_guidance = True
     negative_prompt = None
-    res = test_encode(model, prompt, num_images_per_prompt, do_classifier_guidance, negative_prompt)
-    print(res['output'][0].shape, res['output'], res['pass'])
+    # res = test_encode(model, prompt, num_images_per_prompt, do_classifier_guidance, negative_prompt)
+    # print(res['output'][0].shape, res['output'], res['pass'])
+    res = test_pipeline(model, prompt)
+    print(res)

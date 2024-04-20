@@ -211,8 +211,6 @@ class DiTTextPipeLine(DiTPipeline):
             1,
             guidance_scale > 1,
             None,
-            prompt_embeds=prompt_embeds,
-            negative_prompt_embeds=negative_prompt_embeds,
         )
         text_emb = prompt_embeds
         if guidance_scale > 1:
