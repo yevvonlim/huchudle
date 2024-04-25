@@ -20,6 +20,7 @@ from torchvision import transforms
 import numpy as np
 from collections import OrderedDict
 from PIL import Image
+import wandb
 from copy import deepcopy
 from glob import glob
 from time import time
@@ -122,9 +123,11 @@ def main(args):
     torch.manual_seed(seed)
     torch.cuda.set_device(device)
     print(f"Starting rank={rank}, seed={seed}, world_size={dist.get_world_size()}.")
+    run = None
 
     # Setup an experiment folder:
     if rank == 0:
+        run = wandb.init(project="DiT-k-sw-text", config=vars(args))
         os.makedirs(args.results_dir, exist_ok=True)  # Make results folder (holds all experiment subfolders)
         experiment_index = len(glob(f"{args.results_dir}/*"))
         model_string_name = args.model.replace("/", "-")  # e.g., DiT-XL/2 --> DiT-XL-2 (for naming folders)
@@ -133,6 +136,7 @@ def main(args):
         os.makedirs(checkpoint_dir, exist_ok=True)
         logger = create_logger(experiment_dir)
         logger.info(f"Experiment directory created at {experiment_dir}")
+        
     else:
         logger = create_logger(None)
 
@@ -148,10 +152,18 @@ def main(args):
     model = DDP(model.to(device), device_ids=[rank])
     diffusion = create_diffusion(timestep_respacing="")  # default: 1000 steps, linear noise schedule
     vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
-    logger.info(f"DiT Parameters: {sum(p.numel() for p in model.parameters()):,}")
-
+    if rank == 0:
+        logger.info(f"DiT Parameters: {sum(p.numel() for p in model.parameters()):,}")
+        run.log({"DiT Parameters": sum(p.numel() for p in model.parameters())})
     # Setup optimizer (we used default Adam betas=(0.9, 0.999) and a constant learning rate of 1e-4 in our paper):
     opt = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0)
+
+    if args.ckpt:
+        state_dict = torch.load(args.ckpt, map_location="cpu")
+        model.module.load_state_dict(state_dict["model"])
+        ema.load_state_dict(state_dict["ema"])
+        opt.load_state_dict(state_dict["opt"])
+        logger.info(f"Loaded checkpoint from {args.ckpt}")
 
     # Setup data:
     transform = transforms.Compose([
@@ -172,6 +184,7 @@ def main(args):
         shuffle=True,
         seed=args.global_seed
     )
+    
     loader = DataLoader(
         dataset,
         batch_size=int(args.global_batch_size // dist.get_world_size()),
@@ -227,28 +240,61 @@ def main(args):
                 dist.all_reduce(avg_loss, op=dist.ReduceOp.SUM)
                 avg_loss = avg_loss.item() / dist.get_world_size()
                 logger.info(f"(step={train_steps:07d}) Train Loss: {avg_loss:.4f}, Train Steps/Sec: {steps_per_sec:.2f}")
+                if rank == 0:
+                    run.log({"Train Loss": avg_loss, "Train Steps/Sec": steps_per_sec})
                 # Reset monitoring variables:
                 running_loss = 0
                 log_steps = 0
                 start_time = time()
 
-            # Save DiT checkpoint:
-            if train_steps % args.ckpt_every == 0 and train_steps > 0:
-                if rank == 0:
-                    checkpoint = {
-                        "model": model.module.state_dict(),
-                        "ema": ema.state_dict(),
-                        "opt": opt.state_dict(),
-                        "args": args
-                    }
-                    checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
-                    torch.save(checkpoint, checkpoint_path)
-                    logger.info(f"Saved checkpoint to {checkpoint_path}")
-                dist.barrier()
-
-    model.eval()  # important! This disables randomized embedding dropout
-    # do any sampling/FID calculation/etc. with ema (or model) in eval mode ...
-
+            # # Save DiT checkpoint:
+            # if train_steps % args.ckpt_every == 0 and train_steps > 0:
+            #     if rank == 0:
+            #         checkpoint = {
+            #             "model": model.module.state_dict(),
+            #             "ema": ema.state_dict(),
+            #             "opt": opt.state_dict(),
+            #             "args": args
+            #         }
+            #         checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
+            #         torch.save(checkpoint, checkpoint_path)
+            #         logger.info(f"Saved checkpoint to {checkpoint_path}")
+            #     dist.barrier()
+            dist.barrier()
+            
+        # save image
+        if epoch % 10 == 0 and epoch != 0 and rank == 0:
+            text_prompt = ["a base ball player with cap","an apple"]
+            # Create sampling noise:
+            n = len(text_prompt)
+            null_text_prompt = [""]*n
+            z = torch.randn(n, 4, latent_size, latent_size, device=device)
+            y = ema.text_embedder(text_prompt, False)
+            z = torch.cat([z, z], 0)
+            y_null = ema.text_embedder(null_text_prompt, False)
+            y = torch.cat([y, y_null], 0)
+            model_kwargs = dict(y=y, cfg_scale=4.0)
+            # Sample images:
+            with torch.no_grad():
+                samples = diffusion.p_sample_loop(
+                    ema.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device
+                )
+                samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
+                samples = vae.decode(samples / 0.18215).sample
+                run.log({"sample": [wandb.Image(samples, caption="sample")]})
+            
+            
+            checkpoint = {
+                "model": model.module.state_dict(),
+                "ema": ema.state_dict(),
+                "opt": opt.state_dict(),
+                "args": args
+            }
+            checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
+            torch.save(checkpoint, checkpoint_path)
+            logger.info(f"Saved checkpoint to {checkpoint_path}")
+        
+                
     logger.info("Done!")
     cleanup()
 
@@ -258,7 +304,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", type=str, required=True)
     parser.add_argument("--results-dir", type=str, default="results")
-    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-XL/2-Text")
+    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-S/2-Text")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--epochs", type=int, default=1400)
     parser.add_argument("--global-batch-size", type=int, default=16)
@@ -267,5 +313,6 @@ if __name__ == "__main__":
     parser.add_argument("--num-workers", type=int, default=4)
     parser.add_argument("--log-every", type=int, default=100)
     parser.add_argument("--ckpt-every", type=int, default=50_000)
+    parser.add_argument("--ckpt", type=str, default="")
     args = parser.parse_args()
     main(args)

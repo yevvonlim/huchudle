@@ -16,6 +16,8 @@ from diffusers.models import AutoencoderKL
 from download import find_model
 from models import DiT_models
 import argparse
+from models import TextEmbedder
+from transformers import CLIPTextModel, CLIPTokenizer
 
 
 def main(args):
@@ -45,15 +47,25 @@ def main(args):
 
     # Labels to condition the model with (feel free to change):
     # class_labels = [207, 360, 387, 974, 88, 979, 417, 279]
+    text_prompt=["a base ball player with cap","an apple"]
+    
 
     # Create sampling noise:
-    n = len(class_labels)
+    n = len(text_prompt)
+    null_text_prompt = [""]*n
     z = torch.randn(n, 4, latent_size, latent_size, device=device)
-    y = torch.tensor(class_labels, device=device)
+    text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2", subfolder="text_encoder")
+    tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-2", subfolder="tokenizer")
+    text_embedder = TextEmbedder(text_encoder,tokenizer,0)
+    y= text_embedder(text_prompt,False)
+    # y = torch.tensor(class_labels, device=device)
 
     # Setup classifier-free guidance:
     z = torch.cat([z, z], 0)
-    y_null = torch.tensor([1000] * n, device=device)
+
+    y_null = text_embedder(null_text_prompt, False)
+    # y_null = torch.tensor([1000] * n, device=device)
+
     y = torch.cat([y, y_null], 0)
     model_kwargs = dict(y=y, cfg_scale=args.cfg_scale)
 
@@ -73,7 +85,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-XL/2-Text")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="mse")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
-    parser.add_argument("--cfg-scale", type=float, default=4.0)
+    parser.add_argument("--cfg-scale", type=float, default=12.0)
     parser.add_argument("--num-sampling-steps", type=int, default=250)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ckpt", type=str, default=None,

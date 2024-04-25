@@ -189,21 +189,22 @@ class DiTBlock(nn.Module):
     def __init__(self, hidden_size, num_heads, mlp_ratio=4.0, context_dim=1024,  **block_kwargs):
         super().__init__()
         self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        # self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True, **block_kwargs)
-        self.attn = CrossAttention(hidden_size, context_dim=context_dim, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
         self.norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.norm3 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        
+        self.attn1 = CrossAttention(hidden_size, context_dim=None, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
+        self.attn2 = CrossAttention(hidden_size, context_dim=context_dim, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
+        
         mlp_hidden_dim = int(hidden_size * mlp_ratio)
         approx_gelu = lambda: nn.GELU(approximate="tanh")
         self.mlp = Mlp(in_features=hidden_size, hidden_features=mlp_hidden_dim, act_layer=approx_gelu, drop=0)
-        # self.adaLN_modulation = nn.Sequential(
-        #     nn.SiLU(),
-        #     nn.Linear(hidden_size, 6 * hidden_size, bias=True)
-        # )
+
 
     def forward(self, x, c):
         # shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(c).chunk(6, dim=-1)
-        x = x +  self.attn(self.norm1(x), c)
-        x = x +  self.mlp(self.norm2(x))
+        x = x + self.attn1(self.norm1(x))
+        x = x + self.attn2(self.norm2(x), c)
+        x = x + self.mlp(self.norm3(x))
         return x
 
 
@@ -211,15 +212,21 @@ class FinalLayer(nn.Module):
     """
     The final layer of DiT.
     """
-    def __init__(self, hidden_size, patch_size, out_channels):
+    def __init__(self, hidden_size, num_heads, patch_size, out_channels, context_dim):
         super().__init__()
-        self.norm_final = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.norm3 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        
         self.linear = nn.Linear(hidden_size, patch_size * patch_size * out_channels, bias=True)
-        self.attn = CrossAttention(hidden_size, context_dim=1024, heads=16, dim_head=hidden_size // 16, dropout=0.0)
+        
+        self.attn1 = CrossAttention(hidden_size, context_dim=None, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
+        self.attn2 = CrossAttention(hidden_size, context_dim=context_dim, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
 
     def forward(self, x, c):
-        x = self.attn(self.norm_final(x), c)
-        x = self.linear(x)
+        x = x + self.attn1(self.norm1(x))
+        x = x + self.attn2(self.norm2(x), c)
+        x = self.linear(self.norm3(x))
         return x
 
 
@@ -252,6 +259,8 @@ class DiT(nn.Module):
         # self.y_embedder = LabelEmbedder(num_classes, hidden_size, class_dropout_prob)
         self.text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2", subfolder="text_encoder")
         self.tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-2", subfolder="tokenizer")
+        # self.text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-base-patch32")
+        # self.tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
         
         self.text_encoder.requires_grad_(False)
 
@@ -259,11 +268,14 @@ class DiT(nn.Module):
         num_patches = self.x_embedder.num_patches
         # Will use fixed sin-cos embedding:
         self.pos_embed = nn.Parameter(torch.zeros(1, num_patches, hidden_size), requires_grad=False)
+        self.context_dim = self.text_encoder.text_model.config.hidden_size
+
+        self.t_linear = nn.Linear(hidden_size, self.context_dim, bias=True)
 
         self.blocks = nn.ModuleList([
-            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio) for _ in range(depth)
+            DiTBlock(hidden_size, num_heads, mlp_ratio=mlp_ratio, context_dim=self.context_dim) for _ in range(depth)
         ])
-        self.final_layer = FinalLayer(hidden_size, patch_size, self.out_channels)
+        self.final_layer = FinalLayer(hidden_size, num_heads, patch_size, self.out_channels, context_dim=self.context_dim)
         self.initialize_weights()
 
     def initialize_weights(self):
@@ -328,7 +340,7 @@ class DiT(nn.Module):
         t = self.t_embedder(t)                   # (N, D)
         # y = self.y_embedder(y, self.training)  # (N, D)
         y = self.text_embedder(y, self.training) # (N, L, D)
-        c = t.unsqueeze(1) + y                   # (N, L, D)
+        c = self.t_linear(t.unsqueeze(1)) + y                   # (N, L, D) = (N, 1, D) + (N, L, D)
         for block in self.blocks:
             x = block(x, c)                      # (N, T, D)
         x = self.final_layer(x, c)                # (N, T, patch_size ** 2 * out_channels)
@@ -346,8 +358,8 @@ class DiT(nn.Module):
         # For exact reproducibility reasons, we apply classifier-free guidance on only
         # three channels by default. The standard approach to cfg applies it to all channels.
         # This can be done by uncommenting the following line and commenting-out the line following that.
-        # eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
-        eps, rest = model_out[:, :3], model_out[:, 3:]
+        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        # eps, rest = model_out[:, :3], model_out[:, 3:]
         cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
         half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
         eps = torch.cat([half_eps, half_eps], dim=0)
@@ -441,6 +453,9 @@ def DiT_B_2(**kwargs):
 def DiT_B_4(**kwargs):
     return DiT(depth=12, hidden_size=768, patch_size=4, num_heads=12, **kwargs)
 
+def DiT_S_2_Text(**kwargs):
+    return DiT(depth=12, hidden_size=512, patch_size=2, num_heads=8, **kwargs)
+
 def DiT_B_8(**kwargs):
     return DiT(depth=12, hidden_size=768, patch_size=8, num_heads=12, **kwargs)
 
@@ -459,12 +474,13 @@ DiT_models = {
     # 'DiT-L/2':  DiT_L_2,   'DiT-L/4':  DiT_L_4,   'DiT-L/8':  DiT_L_8,
     # 'DiT-B/2':  DiT_B_2,   'DiT-B/4':  DiT_B_4,   'DiT-B/8':  DiT_B_8,
     # 'DiT-S/2':  DiT_S_2,   'DiT-S/4':  DiT_S_4,   'DiT-S/8':  DiT_S_8,
-    'DiT-XL/2-Text': DiT_XL_2_Text
+    'DiT-XL/2-Text': DiT_XL_2_Text,
+    'DiT-S/2-Text': DiT_S_2_Text
 }
 
 
 if __name__ == "__main__":
-    dit = DiT(depth=28, hidden_size=1024, patch_size=2, num_heads=16)
+    dit = DiT_S_2_Text()
     # x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
     # t: (N,) tensor of diffusion timesteps
     # y: (N,) list of text prompts
@@ -472,4 +488,5 @@ if __name__ == "__main__":
     t = torch.randint(0, 1000, (2,))
     y = ["a cat", "a dog"]
     out = dit(x, t, y)
+    print(f"# of params.: {sum(p.numel() for p in dit.parameters() if p.requires_grad):,}")
     print(out.shape)

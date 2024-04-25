@@ -16,6 +16,9 @@ from diffusers.models import AutoencoderKL
 from download import find_model
 from models import DiT_models
 import argparse
+from models import TextEmbedder
+from transformers import CLIPTextModel, CLIPTokenizer
+
 
 
 def main(args):
@@ -45,15 +48,20 @@ def main(args):
 
     # Labels to condition the model with (feel free to change):
     # class_labels = [207, 360, 387, 974, 88, 979, 417, 279]
-
+    prompt = ["a photo of a happy dog", "a photo of a sad cat"]
+    text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2", subfolder="text_encoder")
+    tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-2", subfolder="tokenizer")
+    text_embedder = TextEmbedder(text_encoder, tokenizer, dropout_prob=0.1)
+    
     # Create sampling noise:
-    n = len(class_labels)
+    n = len(prompt)#batch size
     z = torch.randn(n, 4, latent_size, latent_size, device=device)
-    y = torch.tensor(class_labels, device=device)
-
+    #y = torch.tensor( text_embedder(text=False, train=False), device=device)
+    y = text_embedder(prompt, train=False, device = device)
+    
     # Setup classifier-free guidance:
     z = torch.cat([z, z], 0)
-    y_null = torch.tensor([1000] * n, device=device)
+    y_null = text_embedder([""]*n, train=False)
     y = torch.cat([y, y_null], 0)
     model_kwargs = dict(y=y, cfg_scale=args.cfg_scale)
 
