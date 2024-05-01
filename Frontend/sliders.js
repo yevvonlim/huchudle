@@ -777,4 +777,7 @@ $(document).ready(function() {
     slider_l65_x.addEventListener("input", updatePosition); slider_l65_y.addEventListener("input", updatePosition);
     slider_l66_x.addEventListener("input", updatePosition); slider_l66_y.addEventListener("input", updatePosition);
     slider_l67_x.addEventListener("input", updatePosition); slider_l67_y.addEventListener("input", updatePosition);
+
+    updatePosition();
+
 });
