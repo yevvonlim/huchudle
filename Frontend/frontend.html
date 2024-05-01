@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bootstrap Website Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script> 
+</head>
+<body>
+
+<div class="jumbotron text-center" style="margin-bottom:0">
+  <h2>KSW Spring 2024 Image Generation Project</h2>
+</div>
+
+<div class="container">
+  <div class ="row">
+    
+    <div class="col-sm-6">
+      <div class="row" id="image-div">
+
+        <script>
+          for (let i=0; i<68; i++) {
+            let html = `<div id="landmark-${i}" width="8" height="8" style="position: absolute;"><img src="marker.png" width="8" height="8"><p style="text-align:right;">${i}</p></div>`;
+            $('#image-div').append(html);
+          }
+        </script>
+       
+      
+
+        <div>
+          <h2>Image Output</h2>
+          <img src="" width="480" height="480" id="output-image">
+        </div>  
+      </div>
+
+      <div class="row">
+        <form>
+            <input type="text">
+            <input type="submit">
+        </form>
+      </div>
+    </div>
+
+    <!--Sliders-->
+    <div class="col-sm-6">
+      <div class = "row">
+        <h2>Landmarks</h2>
+      </div>
+    
+      <div class="col-sm-12" style=" max-height: 100vh; overflow-y: scroll;">
+        
+        <div class="row">
+          
+          <!--X Sliders-->
+          <div class="col-sm-6" id="sliders-x">
+            
+            <!--DYNAMIC CODE-->
+            <script src="generate-x-sliders.js" type="module"></script>
+          </div>
+
+          <!--Y Sliders-->
+          <div class="col-sm-6" id="sliders-y">
+
+            <!--DYNAMIC CODE-->
+            <script src="generate-y-sliders.js" type="module"></script>
+    
+            <script src="sliders.js"></script>
+          </div>
+
+        </div>
+      </div>    
+    
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
