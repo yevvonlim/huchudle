@@ -47,7 +47,7 @@ def main(args):
 
     # Labels to condition the model with (feel free to change):
     # class_labels = [207, 360, 387, 974, 88, 979, 417, 279]
-    text_prompt=["a base ball player with cap","an apple"]
+    text_prompt=["A male student who is nervous and tense before an important presentation", "A man whose head consists of a balloon."]
     
 
     # Create sampling noise:
@@ -77,12 +77,12 @@ def main(args):
     samples = vae.decode(samples / 0.18215).sample
 
     # Save and display images:
-    save_image(samples, "sample.png", nrow=4, normalize=True, value_range=(-1, 1))
+    save_image(samples, f"sample_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-XL/2-Text")
+    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-S/2-Text")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="mse")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--cfg-scale", type=float, default=12.0)
