@@ -2,12 +2,13 @@ import dlib
 from PIL import Image, ImageDraw
 import json
 import torch
-import torchvision
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import cv2
+import os
 
 from tqdm.auto import tqdm
+from torchvision.transforms import ToTensor
 
 def draw_landmarks(data):
     
@@ -36,14 +37,15 @@ class HuchuDataset(Dataset):
       
         # img
         img_id = data[idx]["image_id"]
-        img = cv2.imread(self.root_dir + img_id)
-       
-
+        img = Image.open(os.path.join(self.root_dir, img_id))
+        img = ToTensor()(img) 
+        
         # caption
         caption = data[idx]["caption"]
 
         # landmark image
         draw_img = draw_landmarks(data[idx])
+        draw_img = ToTensor()(draw_img)
 
         return img, draw_img, caption
     
