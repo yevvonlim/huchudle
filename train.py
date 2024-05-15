@@ -15,7 +15,7 @@ import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from dataset import HuchuCocoCaptions
+from dataset import HuchuDataset
 from torchvision import transforms
 import numpy as np
 from collections import OrderedDict
@@ -165,18 +165,9 @@ def main(args):
         opt.load_state_dict(state_dict["opt"])
         logger.info(f"Loaded checkpoint from {args.ckpt}")
 
-    # Setup data:
-    transform = transforms.Compose([
-        transforms.Lambda(lambda pil_image: center_crop_arr(pil_image, args.image_size)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5], inplace=True)
-    ])
-    # dataset = ImageFolder(args.data_path, transform=transform)
-    # @yewon We will use Customized CoCoCap dataset here
-    dataset = HuchuCocoCaptions(root=f"{args.data_path}/train2017", 
-                            annFile=f"{args.data_path}/annotations/captions_train2017.json", 
-                            transform=transform)
+    
+   
+    dataset = HuchuDataset(ann_path=args.ann_path, root_dir=args.data_path)
     sampler = DistributedSampler(
         dataset,
         num_replicas=dist.get_world_size(),
@@ -211,14 +202,15 @@ def main(args):
     for epoch in range(args.epochs):
         sampler.set_epoch(epoch)
         logger.info(f"Beginning epoch {epoch}...")
-        for x, y in loader:
+        for x, landmark_img, y in loader:
             x = x.to(device)
+            landmark_img = landmark_img.to(device)
             # y = [yy.decode('utf-8') for yy in y]
             with torch.no_grad():
                 # Map input images to latent space + normalize latents:
                 x = vae.encode(x).latent_dist.sample().mul_(0.18215)
             t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=device)
-            model_kwargs = dict(y=y)
+            model_kwargs = dict(y=y, landmark=landmark_img)
             loss_dict = diffusion.training_losses(model, x, t, model_kwargs)
             loss = loss_dict["loss"].mean()
             opt.zero_grad()
@@ -303,6 +295,7 @@ if __name__ == "__main__":
     # Default args here will train DiT-XL/2 with the hyperparameters we used in our paper (except training iters).
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", type=str, required=True)
+    parser.add_argument("--ann-path", type=str, required=True)
     parser.add_argument("--results-dir", type=str, default="results")
     parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-S/2-Text")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
