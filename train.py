@@ -202,6 +202,43 @@ def main(args):
     for epoch in range(args.epochs):
         sampler.set_epoch(epoch)
         logger.info(f"Beginning epoch {epoch}...")
+        if run:
+            run.log({"epoch": epoch})
+        # save image
+        if epoch % 10 == 0 and rank == 0:
+            _, landmark_img, _ = dataset[0]
+            landmark_img = landmark_img.unsqueeze(0).to(device)
+            text_prompt = ["a picture of an asian man with blonde hair","a picture of an irish woman with black hair, green eyes"]
+            # Create sampling noise:
+            n = len(text_prompt)
+            null_text_prompt = [""]*n
+            z = torch.randn(n, 4, latent_size, latent_size, device=device)
+            z = torch.cat([z, z], 0)
+            y = text_prompt + null_text_prompt
+            landmarks = torch.cat([landmark_img, landmark_img], 0)
+            landmarks = torch.cat([landmarks, landmarks], 0)
+            model_kwargs = dict(y=y, cfg_scale=4.0, landmark=landmarks)
+            # Sample images:
+            with torch.no_grad():
+                samples = diffusion.p_sample_loop(
+                    ema.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device
+                )
+                samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
+                samples = vae.decode(samples / 0.18215).sample
+                run.log({"sample": [wandb.Image(samples, caption="sample")]})
+                run.log({"landmark": [wandb.Image(landmark_img, caption="landmark")]})
+            
+            
+            checkpoint = {
+                "model": model.module.state_dict(),
+                "ema": ema.state_dict(),
+                "opt": opt.state_dict(),
+                "args": args
+            }
+            checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
+            torch.save(checkpoint, checkpoint_path)
+            logger.info(f"Saved checkpoint to {checkpoint_path}")
+        
         for x, landmark_img, y in loader:
             x = x.to(device)
             landmark_img = landmark_img.to(device)
@@ -254,39 +291,6 @@ def main(args):
             #     dist.barrier()
             dist.barrier()
             
-        # save image
-        if epoch % 10 == 0 and rank == 0:
-            text_prompt = ["a picture of an asian man with blonde hair","a picture of an irish woman with black hair, green eyes"]
-            # Create sampling noise:
-            n = len(text_prompt)
-            null_text_prompt = [""]*n
-            z = torch.randn(n, 4, latent_size, latent_size, device=device)
-            y = ema.text_embedder(text_prompt, False)
-            z = torch.cat([z, z], 0)
-            y_null = ema.text_embedder(null_text_prompt, False)
-            y = torch.cat([y, y_null], 0)
-            landmarks = torch.cat([landmark_img, landmark_img], 0)
-            model_kwargs = dict(y=y, cfg_scale=4.0, landmark=landmarks)
-            # Sample images:
-            with torch.no_grad():
-                samples = diffusion.p_sample_loop(
-                    ema.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device
-                )
-                samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
-                samples = vae.decode(samples / 0.18215).sample
-                run.log({"sample": [wandb.Image(samples, caption="sample")]})
-                run.log({"landmark": [wandb.Image(landmark_img, caption="landmark")]})
-            
-            
-            checkpoint = {
-                "model": model.module.state_dict(),
-                "ema": ema.state_dict(),
-                "opt": opt.state_dict(),
-                "args": args
-            }
-            checkpoint_path = f"{checkpoint_dir}/{train_steps:07d}.pt"
-            torch.save(checkpoint, checkpoint_path)
-            logger.info(f"Saved checkpoint to {checkpoint_path}")
         
                 
     logger.info("Done!")
