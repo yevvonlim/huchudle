@@ -127,13 +127,13 @@ def main(args):
 
     # Setup an experiment folder:
     if rank == 0:
-        run = wandb.init(project="DiT-k-sw-text", config=vars(args))
         os.makedirs(args.results_dir, exist_ok=True)  # Make results folder (holds all experiment subfolders)
         experiment_index = len(glob(f"{args.results_dir}/*"))
         model_string_name = args.model.replace("/", "-")  # e.g., DiT-XL/2 --> DiT-XL-2 (for naming folders)
         experiment_dir = f"{args.results_dir}/{experiment_index:03d}-{model_string_name}"  # Create an experiment folder
         checkpoint_dir = f"{experiment_dir}/checkpoints"  # Stores saved model checkpoints
         os.makedirs(checkpoint_dir, exist_ok=True)
+        run = wandb.init(project="DiT-k-sw-text", config=vars(args), dir=experiment_dir)
         logger = create_logger(experiment_dir)
         logger.info(f"Experiment directory created at {experiment_dir}")
         
@@ -255,8 +255,8 @@ def main(args):
             dist.barrier()
             
         # save image
-        if epoch % 10 == 0 and epoch != 0 and rank == 0:
-            text_prompt = ["a base ball player with cap","an apple"]
+        if epoch % 10 == 0 and rank == 0:
+            text_prompt = ["a picture of an asian man with blonde hair","a picture of an irish woman with black hair, green eyes"]
             # Create sampling noise:
             n = len(text_prompt)
             null_text_prompt = [""]*n
@@ -265,7 +265,8 @@ def main(args):
             z = torch.cat([z, z], 0)
             y_null = ema.text_embedder(null_text_prompt, False)
             y = torch.cat([y, y_null], 0)
-            model_kwargs = dict(y=y, cfg_scale=4.0)
+            landmarks = torch.cat([landmark_img, landmark_img], 0)
+            model_kwargs = dict(y=y, cfg_scale=4.0, landmark=landmarks)
             # Sample images:
             with torch.no_grad():
                 samples = diffusion.p_sample_loop(
@@ -274,6 +275,7 @@ def main(args):
                 samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
                 samples = vae.decode(samples / 0.18215).sample
                 run.log({"sample": [wandb.Image(samples, caption="sample")]})
+                run.log({"landmark": [wandb.Image(landmark_img, caption="landmark")]})
             
             
             checkpoint = {
