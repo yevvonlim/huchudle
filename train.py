@@ -208,7 +208,7 @@ def main(args):
         if epoch % 10 == 0 and rank == 0:
             _, landmark_img, _ = dataset[0]
             landmark_img = landmark_img.unsqueeze(0).to(device)
-            text_prompt = ["a picture of an asian man with blonde hair","a picture of an irish woman with black hair, green eyes"]
+            text_prompt = ["a picture of an asian man with blonde hair", "a picture of an irish woman with black hair, green eyes"]
             # Create sampling noise:
             n = len(text_prompt)
             null_text_prompt = [""]*n
@@ -217,7 +217,7 @@ def main(args):
             y = text_prompt + null_text_prompt
             landmarks = torch.cat([landmark_img, landmark_img], 0)
             landmarks = torch.cat([landmarks, landmarks], 0)
-            model_kwargs = dict(y=y, cfg_scale=4.0, landmark=landmarks)
+            model_kwargs = dict(y=y, cfg_scale=9.0, landmark=landmarks)
             # Sample images:
             with torch.no_grad():
                 samples = diffusion.p_sample_loop(

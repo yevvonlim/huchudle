@@ -157,9 +157,8 @@ class TextEmbedder(nn.Module):
         elif text is not None and isinstance(text, list):
             batch_size = len(text)
         else:
-            text = ""
-            batch_size = 1
-
+            raise ValueError("text must be a string or a list of strings.")
+        
         # for classifier-free guidance 
         if train and torch.rand(1) < self.dropout_prob:
             text = [""] * batch_size
@@ -358,8 +357,8 @@ class DiT(nn.Module):
         # y = self.y_embedder(y, self.training)  # (N, D)
         y = self.text_embedder(y, self.training) # (N, L, D)
         for block in self.blocks:
-            x = block(x, t, y)                      # (N, T, D)
-        x = self.final_layer(x, t, y)                # (N, T, patch_size ** 2 * out_channels)
+            x = block(x, t, y)                   # (N, T, D)
+        x = self.final_layer(x, t, y)            # (N, T, patch_size ** 2 * out_channels)
         x = self.unpatchify(x)                   # (N, out_channels, H, W)
         return x
 
@@ -368,13 +367,15 @@ class DiT(nn.Module):
         Forward pass of DiT, but also batches the unconditional forward pass for classifier-free guidance.
         """
         # https://github.com/openai/glide-text2im/blob/main/notebooks/text2im.ipynb
-        half = x[: len(x) // 2]
+        # print(x.shape)
+        half = x[:len(x)//2]
         combined = torch.cat([half, half], dim=0)
+        # combined = x
         model_out = self.forward(combined, t, y, landmark)
         # For exact reproducibility reasons, we apply classifier-free guidance on only
         # three channels by default. The standard approach to cfg applies it to all channels.
         # This can be done by uncommenting the following line and commenting-out the line following that.
-        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        eps, rest = model_out[:, :self.out_channels//2], model_out[:, self.out_channels//2:]
         # eps, rest = model_out[:, :3], model_out[:, 3:]
         cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
         half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)

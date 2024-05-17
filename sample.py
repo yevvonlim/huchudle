@@ -16,6 +16,9 @@ from diffusers.models import AutoencoderKL
 from download import find_model
 from models import DiT_models
 import argparse
+from models import TextEmbedder
+from transformers import CLIPTextModel, CLIPTokenizer
+from dataset import HuchuDataset
 
 
 def main(args):
@@ -28,7 +31,7 @@ def main(args):
         assert args.model == "DiT-XL/2", "Only DiT-XL/2 models are available for auto-download."
         assert args.image_size in [256, 512]
         # assert args.num_classes == 1000
-
+    dataset = HuchuDataset(ann_path=args.ann_path, root_dir=args.data_path)
     # Load model:
     latent_size = args.image_size // 8
     model = DiT_models[args.model](
@@ -45,35 +48,39 @@ def main(args):
 
     # Labels to condition the model with (feel free to change):
     # class_labels = [207, 360, 387, 974, 88, 979, 417, 279]
-
+    text_prompt = ["a picture of a asian man"]
+    _, landmark_img, _ = dataset[10]
+    landmark_img = landmark_img.unsqueeze(0).to(device)
     # Create sampling noise:
-    n = len(class_labels)
-    z = torch.randn(n, 4, latent_size, latent_size, device=device)
-    y = torch.tensor(class_labels, device=device)
+    n = len(text_prompt)
+    null_text_prompt = [""]*n
+    z = torch.randn(2*n, 4, latent_size, latent_size, device=device)
+    # z = torch.cat([z, z], 0)
+    y = text_prompt + null_text_prompt
+    landmarks = torch.cat([landmark_img, landmark_img], 0)
+    model_kwargs = dict(y=y, cfg_scale=args.cfg_scale, landmark=landmarks)
 
-    # Setup classifier-free guidance:
-    z = torch.cat([z, z], 0)
-    y_null = torch.tensor([1000] * n, device=device)
-    y = torch.cat([y, y_null], 0)
-    model_kwargs = dict(y=y, cfg_scale=args.cfg_scale)
-
+    print(len(y), z.shape, landmarks.shape)
     # Sample images:
-    samples = diffusion.p_sample_loop(
-        model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device
-    )
-    samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
-    samples = vae.decode(samples / 0.18215).sample
-
+    with torch.no_grad():
+        samples = diffusion.p_sample_loop(
+            model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device
+        )
+        # samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
+        samples = vae.decode(samples / 0.18215).sample
     # Save and display images:
-    save_image(samples, "sample.png", nrow=4, normalize=True, value_range=(-1, 1))
+    save_image(samples, f"sample_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
+    save_image(landmarks, f"landmark_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-XL/2-Text")
+    parser.add_argument("--data-path", type=str, required=True)
+    parser.add_argument("--ann-path", type=str, required=True)
+    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-L/2-Text")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="mse")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
-    parser.add_argument("--cfg-scale", type=float, default=4.0)
+    parser.add_argument("--cfg-scale", type=float, default=12.0)
     parser.add_argument("--num-sampling-steps", type=int, default=250)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ckpt", type=str, default=None,
