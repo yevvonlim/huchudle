@@ -2,9 +2,9 @@ import React from 'react';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 
-function MultilineTextFields({ onTextChange }) {
+function MultilineTextFields({ onTextInputChange }) {
   const handleChange = (event) => {
-    onTextChange(event.target.value);
+    onTextInputChange(event.target.value);
   };
 
   return (
@@ -19,8 +19,8 @@ function MultilineTextFields({ onTextChange }) {
       <div>
         <TextField
           id="outlined-textarea"
-          label="Prompt"
-          placeholder="Create a person who has a brown hair and blue eyes."
+          label="Text Explanation"
+          placeholder="Create a person who has brown hair and blue eyes."
           rows={4}
           multiline
           onChange={handleChange}

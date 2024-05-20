@@ -1,7 +1,6 @@
-// src/App.js
 import React, { useState, useRef } from 'react';
 import './App.css';
-import Draggable from 'react-draggable';
+
 import Landmark from './Landmark';
 import MultilineTextFields from './MultilineTextFields';
 import styled from 'styled-components';
@@ -21,28 +20,32 @@ const RoundedContainer = styled.div`
 `;
 
 function App() {
-  const [text, setText] = useState('');
-  const landmarkRef = useRef();
+  const [textInput, setTextInput] = useState('');
+  const [finalPositions, setFinalPositions] = useState([]);
 
-  const handleTextChange = (newText) => {
-    setText(newText);
+  const handleTextInputChange = (text) => {
+    setTextInput(text);
   };
 
-  const handleGenerateImage = () => {
-    if (landmarkRef.current) {
-      landmarkRef.current.saveAndSendPositions();
+  const handleFinalPositionsChange = (positions) => {
+    setFinalPositions(positions);
+  };
+
+  const handleGenerateImage = async () => {
+    const payload = {
+      caption: textInput,
+      landmark: finalPositions.map(position => [position.x, position.y])
+    };
+
+
+    try {
+      const response = await axios.post('http://localhost:8000/postwelltest', payload);
+      console.log('Data sent to server successfully:', response.data);
+    } catch (error) {
+      console.error('Error sending data to server:', error);
     }
-
-    axios.post('https://your-server-endpoint.com/api/text', {
-      text
-    })
-    .then(response => {
-      console.log('Text sent to server successfully:', response.data);
-    })
-    .catch(error => {
-      console.error('Error sending text to server:', error);
-    });
   };
+  
 
   return (
     <div className="container-home">
@@ -50,10 +53,11 @@ function App() {
         <RoundedContainer>
           <h3>Custom Image Generation</h3>
           <p>Move facial landmark by drag</p>
-          <Landmark ref={landmarkRef} />
+          <Landmark onFinalPositionsChange={handleFinalPositionsChange} />
           <p>Describe the Face you want to generate</p>
-          <MultilineTextFields onTextChange={handleTextChange} />
+          <MultilineTextFields onTextInputChange={handleTextInputChange} />
           <Button variant="dark" onClick={handleGenerateImage}>Generate Image</Button>
+          
         </RoundedContainer>
       </div>
       <div className="container-mdA">
