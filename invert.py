@@ -62,6 +62,7 @@ def main(args):
         tokens = torch.zeros(batch_size, 77).to(device, torch.int64) + 7788
         
         model_kwargs = dict(y="", landmark=landmark_img, token=tokens)
+        # model_kwargs = dict(y="", landmark=landmark_img)
         z = diffusion.ddim_reverse_sample_loop(model.forward, x, t, model_kwargs=model_kwargs, device=device)
         z = torch.cat([z, z], 0)
         landmark_img = torch.cat([landmark_img, landmark_img], 0)

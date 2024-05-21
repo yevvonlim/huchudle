@@ -394,19 +394,19 @@ class DiT(nn.Module):
         '''Remove positional embedding of text embedder.
         '''
         # delete the position embeddings
-        n = self.text_encoder.text_model.embeddings.position_embedding.num_embeddings
-        dim = self.text_encoder.text_model.embeddings.position_embedding.embedding_dim
+        n = self.text_embedder.text_encoder.text_model.embeddings.position_embedding.num_embeddings
+        dim = self.text_embedder.text_encoder.text_model.embeddings.position_embedding.embedding_dim
         emb = nn.Embedding(n, dim)
         emb.weight = nn.Parameter(torch.zeros_like(emb.weight).to(device))
 
-        self.original_position_embedding = deepcopy(self.text_encoder.text_model.embeddings.position_embedding)
-        self.text_encoder.text_model.embeddings.position_embedding = emb 
+        self.original_position_embedding = deepcopy(self.text_embedder.text_encoder.text_model.embeddings.position_embedding)
+        self.text_embedder.text_encoder.text_model.embeddings.position_embedding = emb 
 
 
     def retain_orig_pos_emb(self):
         '''Retain the original positional embedding.
         '''
-        self.text_encoder.text_model.embeddings.position_embedding = self.original_position_embedding
+        self.text_embedder.text_encoder.text_model.embeddings.position_embedding = self.original_position_embedding
     
 
 
