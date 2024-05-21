@@ -151,7 +151,7 @@ class TextEmbedder(nn.Module):
         self.dropout_prob = dropout_prob
 
 
-    def forward(self, text, train):
+    def forward(self, text, train, token=None):
         
         if text is not None and isinstance(text, str):
             batch_size = 1
@@ -163,14 +163,17 @@ class TextEmbedder(nn.Module):
         # for classifier-free guidance 
         if train and torch.rand(1) < self.dropout_prob:
             text = [""] * batch_size
-        text_inputs = self.tokenizer(
-            text,
-            padding="max_length",
-            max_length=self.tokenizer.model_max_length,
-            truncation=True,
-            return_tensors="pt",
-        ).to(self.text_encoder.device)
-        text_input_ids = text_inputs.input_ids
+        if not token:
+            text_inputs = self.tokenizer(
+                text,
+                padding="max_length",
+                max_length=self.tokenizer.model_max_length,
+                truncation=True,
+                return_tensors="pt",
+            ).to(self.text_encoder.device)
+            text_input_ids = text_inputs.input_ids
+        else:
+            text_input_ids = token
         prompt_embeds = self.text_encoder(text_input_ids)
         prompt_embeds = prompt_embeds[0]
         prompt_embeds_dtype = self.text_encoder.dtype
@@ -345,18 +348,19 @@ class DiT(nn.Module):
         imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
         return imgs
 
-    def forward(self, x, t, y, landmark):
+    def forward(self, x, t, y, landmark, token=None):
         """
         Forward pass of DiT.
         x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
         t: (N,) tensor of diffusion timesteps
         y: (N,) list of text prompts
+        token: (N, ) tensor of tokenized text
         """
         x = torch.cat([x, landmark], dim=1)
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
         t = self.t_embedder(t)                   # (N, D)
         # y = self.y_embedder(y, self.training)  # (N, D)
-        y = self.text_embedder(y, self.training) # (N, L, D)
+        y = self.text_embedder(y, self.training, token) # (N, L, D)
         for block in self.blocks:
             x = block(x, t, y)                   # (N, T, D)
         x = self.final_layer(x, t, y)            # (N, T, patch_size ** 2 * out_channels)
@@ -387,9 +391,6 @@ class DiT(nn.Module):
     def remove_pos_emb(self, device):
         '''Remove positional embedding of text embedder.
         '''
-        # Exceptional prompt
-        tokens = torch.zeros(1, 77).to(device, torch.int64) + 7788
-
         # delete the position embeddings
         n = self.text_encoder.text_model.embeddings.position_embedding.num_embeddings
         dim = self.text_encoder.text_model.embeddings.position_embedding.embedding_dim
@@ -399,10 +400,13 @@ class DiT(nn.Module):
         self.original_position_embedding = deepcopy(self.text_encoder.text_model.embeddings.position_embedding)
         self.text_encoder.text_model.embeddings.position_embedding = emb 
 
-        text_embeddings = self.text_encoder(tokens)[0]
-        self.exceptional_prompt = text_embeddings
+
+    def retain_orig_pos_emb(self):
+        '''Retain the original positional embedding.
+        '''
+        self.text_encoder.text_model.embeddings.position_embedding = self.original_position_embedding
     
-    
+
 
 #################################################################################
 #                   Sine/Cosine Positional Embedding Functions                  #
