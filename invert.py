@@ -32,6 +32,7 @@ def main(args):
         assert args.image_size in [256, 512]
         # assert args.num_classes == 1000
     dataset = HuchuDataset(ann_path=args.ann_path, root_dir=args.data_path)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
     # Load model:
     latent_size = args.image_size // 8
     model = DiT_models[args.model](
@@ -46,33 +47,19 @@ def main(args):
     diffusion = create_diffusion(str(args.num_sampling_steps))
     vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
 
-    # Labels to condition the model with (feel free to change):
-    # class_labels = [207, 360, 387, 974, 88, 979, 417, 279]
-    text_prompt = ["a picture of a man with blonde hair"]
-    _, landmark_img, _ = dataset[100]
-    landmark_img = landmark_img.unsqueeze(0).to(device)
-    # Create sampling noise:
-    n = len(text_prompt)
-    null_text_prompt = [""]*n
-    z = torch.randn(2*n, 4, latent_size, latent_size, device=device)
-    # z = torch.cat([z, z], 0)
-    y = text_prompt + null_text_prompt
-    landmarks = torch.cat([landmark_img, landmark_img], 0)
-    model_kwargs = dict(y=y, cfg_scale=args.cfg_scale, landmark=landmarks)
-
-    print(len(y), z.shape, landmarks.shape)
-    # Sample images:
-    with torch.no_grad():
-        samples = diffusion.p_sample_loop(
-            model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device
-        )
-        # samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
-        samples = vae.decode(samples / 0.18215).sample
-    # Save and display images:
-    save_image(samples, f"sample_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
-    save_image(landmarks, f"landmark_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
-
-
+    for x, landmark_img, y in dataloader:
+        x = x.to(device)
+        landmark_img = landmark_img.to(device)
+        with torch.no_grad():
+            x = vae.encode(x).latent_dist.sample().mul_(0.18215)
+        t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=device)
+        model_kwargs = dict(y=y, landmark=landmark_img)
+        sample = diffusion.ddim_reverse_sample_loop(model.forward, x, t, model_kwargs=model_kwargs, device=device)
+        
+        sample = vae.decode(sample / 0.18215).sample
+        # Save and display images:
+        save_image(sample, f"inversion_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
+        
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", type=str, required=True)

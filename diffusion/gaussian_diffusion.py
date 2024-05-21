@@ -9,6 +9,7 @@ import math
 import numpy as np
 import torch as th
 import enum
+from tqdm.auto import tqdm 
 
 from .diffusion_utils import discretized_gaussian_log_likelihood, normal_kl
 
@@ -596,6 +597,46 @@ class GaussianDiffusion:
         mean_pred = out["pred_xstart"] * th.sqrt(alpha_bar_next) + th.sqrt(1 - alpha_bar_next) * eps
 
         return {"sample": mean_pred, "pred_xstart": out["pred_xstart"]}
+
+
+    def ddim_reverse_sample_loop(self,
+        model,
+        x,
+        t,
+        clip_denoised=True,
+        denoised_fn=None,
+        cond_fn=None,
+        model_kwargs=None,
+        eta=0.0,
+        device=None):
+        """
+        Invert Image into Latents using ODE
+        """
+        final = None
+        device = next(model.parameters()).device
+        x = x.to(device)
+        batch_size = x.shape[0]
+        indices = list(range(self.num_timesteps))
+        for i in tqdm(indices, desc="Exceptional Prompt Inversion ..."):
+            t = th.tensor([i] * batch_size, device=device)
+            with th.no_grad():
+                out = self.ddim_reverse_sample(
+                    model,
+                    x,
+                    t,
+                    clip_denoised=clip_denoised,
+                    denoised_fn=denoised_fn,
+                    cond_fn=cond_fn,
+                    model_kwargs=model_kwargs,
+                    eta=eta,
+                )
+                final = out
+                x = out["sample"]
+        
+        return final["sample"]
+
+
+    
 
     def ddim_sample_loop(
         self,

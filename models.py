@@ -12,6 +12,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from copy import deepcopy
 import math
 from transformers import CLIPTextModel, CLIPTokenizer
 from timm.models.vision_transformer import PatchEmbed, Attention, Mlp
@@ -382,6 +383,26 @@ class DiT(nn.Module):
         eps = torch.cat([half_eps, half_eps], dim=0)
         return torch.cat([eps, rest], dim=1)
 
+
+    def remove_pos_emb(self, device):
+        '''Remove positional embedding of text embedder.
+        '''
+        # Exceptional prompt
+        tokens = torch.zeros(1, 77).to(device, torch.int64) + 7788
+
+        # delete the position embeddings
+        n = self.text_encoder.text_model.embeddings.position_embedding.num_embeddings
+        dim = self.text_encoder.text_model.embeddings.position_embedding.embedding_dim
+        emb = nn.Embedding(n, dim)
+        emb.weight = nn.Parameter(torch.zeros_like(emb.weight).to(device))
+
+        self.original_position_embedding = deepcopy(self.text_encoder.text_model.embeddings.position_embedding)
+        self.text_encoder.text_model.embeddings.position_embedding = emb 
+
+        text_embeddings = self.text_encoder(tokens)[0]
+        self.exceptional_prompt = text_embeddings
+    
+    
 
 #################################################################################
 #                   Sine/Cosine Positional Embedding Functions                  #
