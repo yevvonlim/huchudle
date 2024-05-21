@@ -613,7 +613,6 @@ class GaussianDiffusion:
         Invert Image into Latents using ODE
         """
         final = None
-        device = next(model.parameters()).device
         x = x.to(device)
         batch_size = x.shape[0]
         indices = list(range(self.num_timesteps))

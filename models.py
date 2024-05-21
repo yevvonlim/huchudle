@@ -151,7 +151,7 @@ class TextEmbedder(nn.Module):
         self.dropout_prob = dropout_prob
 
 
-    def forward(self, text, train, token=None):
+    def forward(self, text, train, token:torch.Tensor=None):
         
         if text is not None and isinstance(text, str):
             batch_size = 1
@@ -163,7 +163,7 @@ class TextEmbedder(nn.Module):
         # for classifier-free guidance 
         if train and torch.rand(1) < self.dropout_prob:
             text = [""] * batch_size
-        if not token:
+        if token is None:
             text_inputs = self.tokenizer(
                 text,
                 padding="max_length",
@@ -172,8 +172,10 @@ class TextEmbedder(nn.Module):
                 return_tensors="pt",
             ).to(self.text_encoder.device)
             text_input_ids = text_inputs.input_ids
+            
         else:
             text_input_ids = token
+        
         prompt_embeds = self.text_encoder(text_input_ids)
         prompt_embeds = prompt_embeds[0]
         prompt_embeds_dtype = self.text_encoder.dtype

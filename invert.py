@@ -50,7 +50,7 @@ def main(args):
     # exceptional prompt inversion
     
     for x, landmark_img, y in dataloader:
-        model.remove_pos_emb()
+        model.remove_pos_emb(device)
         x = x.to(device)
         batch_size = x.shape[0]
         landmark_img = landmark_img.to(device)
@@ -60,17 +60,19 @@ def main(args):
         
         # Exceptional prompt
         tokens = torch.zeros(batch_size, 77).to(device, torch.int64) + 7788
+        
         model_kwargs = dict(y="", landmark=landmark_img, token=tokens)
         z = diffusion.ddim_reverse_sample_loop(model.forward, x, t, model_kwargs=model_kwargs, device=device)
         z = torch.cat([z, z], 0)
         landmark_img = torch.cat([landmark_img, landmark_img], 0)
-        y = [y] + [""]
-        model_kwargs = dict(y=y, landmark=landmark_img)
-        model.retain_pos_emb()
+        y = y + ("",)
+        model_kwargs = dict(y=list(y), landmark=landmark_img, cfg_scale=args.cfg_scale)
+        model.retain_orig_pos_emb()
         with torch.no_grad():
             samples = diffusion.p_sample_loop(
                 model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device
             )
+            samples,_ = samples.chunk(2, dim=0)
         # samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
         samples = vae.decode(samples / 0.18215).sample
     
