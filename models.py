@@ -12,6 +12,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
+from copy import deepcopy
 import math
 from transformers import CLIPTextModel, CLIPTokenizer
 from timm.models.vision_transformer import PatchEmbed, Attention, Mlp
@@ -150,27 +151,31 @@ class TextEmbedder(nn.Module):
         self.dropout_prob = dropout_prob
 
 
-    def forward(self, text, train):
+    def forward(self, text, train, token:torch.Tensor=None):
         
         if text is not None and isinstance(text, str):
             batch_size = 1
         elif text is not None and isinstance(text, list):
             batch_size = len(text)
         else:
-            text = ""
-            batch_size = 1
-
+            raise ValueError("text must be a string or a list of strings.")
+        
         # for classifier-free guidance 
         if train and torch.rand(1) < self.dropout_prob:
             text = [""] * batch_size
-        text_inputs = self.tokenizer(
-            text,
-            padding="max_length",
-            max_length=self.tokenizer.model_max_length,
-            truncation=True,
-            return_tensors="pt",
-        ).to(self.text_encoder.device)
-        text_input_ids = text_inputs.input_ids
+        if token is None:
+            text_inputs = self.tokenizer(
+                text,
+                padding="max_length",
+                max_length=self.tokenizer.model_max_length,
+                truncation=True,
+                return_tensors="pt",
+            ).to(self.text_encoder.device)
+            text_input_ids = text_inputs.input_ids
+            
+        else:
+            text_input_ids = token
+        
         prompt_embeds = self.text_encoder(text_input_ids)
         prompt_embeds = prompt_embeds[0]
         prompt_embeds_dtype = self.text_encoder.dtype
@@ -191,7 +196,9 @@ class DiTBlock(nn.Module):
         self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.norm3 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        
+        self.norm4 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.norm5 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+
         self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True, **block_kwargs)
         self.attn1 = CrossAttention(hidden_size, context_dim=None, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
         self.attn2 = CrossAttention(hidden_size, context_dim=context_dim, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
@@ -208,9 +215,9 @@ class DiTBlock(nn.Module):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(t).chunk(6, dim=-1)
         x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
         x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
-        x = x + self.attn1(self.norm1(x))
-        x = x + self.attn2(self.norm2(x), c)
-        x = x + self.mlp(self.norm3(x))
+        x = x + self.attn1(self.norm3(x))
+        x = x + self.attn2(self.norm4(x), c)
+        x = x + self.mlp(self.norm5(x))
         return x
 
 
@@ -270,7 +277,7 @@ class DiT(nn.Module):
         if landmark_cond:
             self.in_channels += 1
 
-        self.x_embedder = PatchEmbed(input_size, patch_size, in_channels, hidden_size, bias=True)
+        self.x_embedder = PatchEmbed(input_size, patch_size, self.in_channels, hidden_size, bias=True)
         self.t_embedder = TimestepEmbedder(hidden_size)
         # self.y_embedder = LabelEmbedder(num_classes, hidden_size, class_dropout_prob)
         self.text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2", subfolder="text_encoder")
@@ -345,40 +352,64 @@ class DiT(nn.Module):
         imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
         return imgs
 
-    def forward(self, x, t, y):
+    def forward(self, x, t, y, landmark, token=None):
         """
         Forward pass of DiT.
         x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
         t: (N,) tensor of diffusion timesteps
         y: (N,) list of text prompts
+        token: (N, ) tensor of tokenized text
         """
+        x = torch.cat([x, landmark], dim=1)
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
         t = self.t_embedder(t)                   # (N, D)
         # y = self.y_embedder(y, self.training)  # (N, D)
-        y = self.text_embedder(y, self.training) # (N, L, D)
+        y = self.text_embedder(y, self.training, token) # (N, L, D)
         for block in self.blocks:
-            x = block(x, t, y)                      # (N, T, D)
-        x = self.final_layer(x, t, y)                # (N, T, patch_size ** 2 * out_channels)
+            x = block(x, t, y)                   # (N, T, D)
+        x = self.final_layer(x, t, y)            # (N, T, patch_size ** 2 * out_channels)
         x = self.unpatchify(x)                   # (N, out_channels, H, W)
         return x
 
-    def forward_with_cfg(self, x, t, y, cfg_scale):
+    def forward_with_cfg(self, x, t, y, landmark, cfg_scale):
         """
         Forward pass of DiT, but also batches the unconditional forward pass for classifier-free guidance.
         """
         # https://github.com/openai/glide-text2im/blob/main/notebooks/text2im.ipynb
-        half = x[: len(x) // 2]
+        # print(x.shape)
+        half = x[:len(x)//2]
         combined = torch.cat([half, half], dim=0)
-        model_out = self.forward(combined, t, y)
+        # combined = x
+        model_out = self.forward(combined, t, y, landmark)
         # For exact reproducibility reasons, we apply classifier-free guidance on only
         # three channels by default. The standard approach to cfg applies it to all channels.
         # This can be done by uncommenting the following line and commenting-out the line following that.
-        eps, rest = model_out[:, :self.in_channels], model_out[:, self.in_channels:]
+        eps, rest = model_out[:, :self.out_channels//2], model_out[:, self.out_channels//2:]
         # eps, rest = model_out[:, :3], model_out[:, 3:]
         cond_eps, uncond_eps = torch.split(eps, len(eps) // 2, dim=0)
         half_eps = uncond_eps + cfg_scale * (cond_eps - uncond_eps)
         eps = torch.cat([half_eps, half_eps], dim=0)
         return torch.cat([eps, rest], dim=1)
+
+
+    def remove_pos_emb(self, device):
+        '''Remove positional embedding of text embedder.
+        '''
+        # delete the position embeddings
+        n = self.text_embedder.text_encoder.text_model.embeddings.position_embedding.num_embeddings
+        dim = self.text_embedder.text_encoder.text_model.embeddings.position_embedding.embedding_dim
+        emb = nn.Embedding(n, dim)
+        emb.weight = nn.Parameter(torch.zeros_like(emb.weight).to(device))
+
+        self.original_position_embedding = deepcopy(self.text_embedder.text_encoder.text_model.embeddings.position_embedding)
+        self.text_embedder.text_encoder.text_model.embeddings.position_embedding = emb 
+
+
+    def retain_orig_pos_emb(self):
+        '''Retain the original positional embedding.
+        '''
+        self.text_embedder.text_encoder.text_model.embeddings.position_embedding = self.original_position_embedding
+    
 
 
 #################################################################################
