@@ -196,7 +196,9 @@ class DiTBlock(nn.Module):
         self.norm1 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.norm2 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
         self.norm3 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
-        
+        self.norm4 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+        self.norm5 = nn.LayerNorm(hidden_size, elementwise_affine=False, eps=1e-6)
+
         self.attn = Attention(hidden_size, num_heads=num_heads, qkv_bias=True, **block_kwargs)
         self.attn1 = CrossAttention(hidden_size, context_dim=None, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
         self.attn2 = CrossAttention(hidden_size, context_dim=context_dim, heads=num_heads, dim_head=hidden_size // num_heads, dropout=0.0)
@@ -213,9 +215,9 @@ class DiTBlock(nn.Module):
         shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = self.adaLN_modulation(t).chunk(6, dim=-1)
         x = x + gate_msa.unsqueeze(1) * self.attn(modulate(self.norm1(x), shift_msa, scale_msa))
         x = x + gate_mlp.unsqueeze(1) * self.mlp(modulate(self.norm2(x), shift_mlp, scale_mlp))
-        x = x + self.attn1(self.norm1(x))
-        x = x + self.attn2(self.norm2(x), c)
-        x = x + self.mlp(self.norm3(x))
+        x = x + self.attn1(self.norm3(x))
+        x = x + self.attn2(self.norm4(x), c)
+        x = x + self.mlp(self.norm5(x))
         return x
 
 
