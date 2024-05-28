@@ -1,64 +1,70 @@
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Freeman&family=Oswald:wght@200&display=swap');
-
-.container-home {
-  display: flex;
-  flex-direction: row; /* 기본적으로 가로 배열 */
-  flex-wrap: wrap;
-  justify-content: center;
-  height: 100vh; /* Viewport height */
-}
-
-.container-section {
-  flex: 1;
-  min-width: 500px; /* 최소 너비를 설정하여 너무 작아지지 않도록 합니다. */
-  max-width: 50%; /* 기본적으로 화면의 절반을 차지하게 합니다. */
-  box-sizing: border-box;
-  padding-left: 30px;
-  padding-bottom: 30px;
-  padding-right: 30px;
-}
-
-@media (min-width: 32000px) {
-  .container-home {
-    flex-direction: column; /* 화면이 작아지면 세로 배열 */
+.container {
+    max-width: 960px;
   }
-
-  .container-section {
-    max-width: 100%; /* 화면이 작아지면 전체 너비를 차지하도록 합니다. */
+  
+  /*
+   * Custom translucent site header
+   */
+  
+  .site-header {
+    background-color: rgba(0, 0, 0, .85);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
   }
-}
-
-
-
-h3 {
-  font-family: "Oswald", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 700;
-  font-style: normal;
-}
-
-p1 {
-  font-family: "Oswald", sans-serif;
-  font-optical-sizing: auto;
-  font-weight: 400;
-  font-style: normal;
-}
-
-h4 {
-  font-family: "Freeman", sans-serif;
-  font-weight: 600;
-  font-style: normal;
-}
-
-p {
-  font-family: "Freeman", sans-serif;
-  font-weight: 300;
-  font-style: normal;
-}
-
-body {
-  font-family: "Freeman", sans-serif;
-  font-weight: 200;
-  font-style: normal;
-}
+  .site-header a {
+    color: #8e8e8e;
+    transition: color .15s ease-in-out;
+  }
+  .site-header a:hover {
+    color: #fff;
+    text-decoration: none;
+  }
+  
+  /*
+   * Dummy devices (replace them with your own or something else entirely!)
+   */
+  
+  .product-device {
+    position: absolute;
+    right: 10%;
+    bottom: -30%;
+    width: 300px;
+    height: 540px;
+    background-color: #333;
+    border-radius: 21px;
+    transform: rotate(30deg);
+  }
+  
+  .product-device::before {
+    position: absolute;
+    top: 10%;
+    right: 10px;
+    bottom: 10%;
+    left: 10px;
+    content: "";
+    background-color: rgba(255, 255, 255, .1);
+    border-radius: 5px;
+  }
+  
+  .product-device-2 {
+    top: -25%;
+    right: auto;
+    bottom: 0;
+    left: 5%;
+    background-color: #e5e5e5;
+  }
+  
+  
+  /*
+   * Extra utilities
+   */
+  
+  .flex-equal > * {
+    flex: 1;
+  }
+  @media (min-width: 768px) {
+    .flex-md-equal > * {
+      flex: 1;
+    }
+  }
+  
