@@ -160,9 +160,9 @@ def main(args):
 
     if args.ckpt:
         state_dict = torch.load(args.ckpt, map_location="cpu")
-        model.module.load_state_dict(state_dict["model"])
-        ema.load_state_dict(state_dict["ema"])
-        opt.load_state_dict(state_dict["opt"])
+        model.module.load_state_dict(state_dict["model"], strict=False)
+        ema.load_state_dict(state_dict["ema"], strict=False)
+        opt.load_state_dict(state_dict["opt"], strict=False)
         logger.info(f"Loaded checkpoint from {args.ckpt}")
 
     
@@ -208,7 +208,7 @@ def main(args):
         if epoch % 10 == 0 and rank == 0:
             _, landmark_img, _ = dataset[0]
             landmark_img = landmark_img.unsqueeze(0).to(device)
-            text_prompt = ["a picture of an asian man with blonde hair", "a picture of an irish woman with black hair, green eyes"]
+            text_prompt = ["a picture of a man with blonde hair", "a picture of an irish woman with black hair, green eyes"]
             # Create sampling noise:
             n = len(text_prompt)
             null_text_prompt = [""]*n

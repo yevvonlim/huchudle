@@ -599,43 +599,92 @@ class GaussianDiffusion:
         return {"sample": mean_pred, "pred_xstart": out["pred_xstart"]}
 
 
-    def ddim_reverse_sample_loop(self,
+    def ddim_reverse_sample_loop(
+        self,
         model,
-        x,
-        t,
+        shape,
+        noise=None,
         clip_denoised=True,
         denoised_fn=None,
         cond_fn=None,
         model_kwargs=None,
+        device=None,
+        progress=False,
         eta=0.0,
-        device=None):
+        real_step=0
+    ):
         """
-        Invert Image into Latents using ODE
+        Generate samples from the model using DDIM.
+
+        Same usage as p_sample_loop().
         """
         final = None
-        x = x.to(device)
-        batch_size = x.shape[0]
-        indices = list(range(self.num_timesteps))
-        for i in tqdm(indices, desc="Exceptional Prompt Inversion ..."):
-            t = th.tensor([i] * batch_size, device=device)
+        for sample in self.ddim_reverse_sample_loop_progressive(
+            model,
+            shape,
+            noise=noise,
+            clip_denoised=clip_denoised,
+            denoised_fn=denoised_fn,
+            cond_fn=cond_fn,
+            model_kwargs=model_kwargs,
+            device=device,
+            progress=progress,
+            eta=eta,
+            real_step=real_step
+        ):
+            final = sample
+        return final["sample"]
+
+    def ddim_reverse_sample_loop_progressive(
+        self,
+        model,
+        shape,
+        noise=None,
+        clip_denoised=True,
+        denoised_fn=None,
+        cond_fn=None,
+        model_kwargs=None,
+        device=None,
+        progress=False,
+        eta=0.0,
+        real_step=0
+    ):
+        """
+        Use DDIM to sample from the model and yield intermediate samples from
+        each timestep of DDIM.
+
+        Same usage as p_sample_loop_progressive().
+        """
+        if device is None:
+            device = next(model.parameters()).device
+        assert isinstance(shape, (tuple, list))
+        if noise is not None:
+            img = noise
+        else:
+            img = th.randn(*shape, device=device)
+        # print(real_step, type(real_step))
+        indices = list(range(self.num_timesteps)) if real_step==0 else list(range(self.num_timesteps))[:real_step]#[::-1] # 1, ..., T
+
+        if progress:
+            # Lazy import so that we don't depend on tqdm.
+            from tqdm.auto import tqdm
+
+            indices = tqdm(indices)
+
+        for i in indices:
+            t = th.tensor([i] * shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_reverse_sample(
                     model,
-                    x,
+                    img,
                     t,
                     clip_denoised=clip_denoised,
                     denoised_fn=denoised_fn,
-                    cond_fn=cond_fn,
                     model_kwargs=model_kwargs,
                     eta=eta,
                 )
-                final = out
-                x = out["sample"]
-        
-        return final["sample"]
-
-
-    
+                yield out
+                img = out["sample"]
 
     def ddim_sample_loop(
         self,

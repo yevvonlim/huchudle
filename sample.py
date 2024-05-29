@@ -48,8 +48,8 @@ def main(args):
 
     # Labels to condition the model with (feel free to change):
     # class_labels = [207, 360, 387, 974, 88, 979, 417, 279]
-    text_prompt = ["a picture of a man with blonde hair"]
-    _, landmark_img, _ = dataset[100]
+    text_prompt = ["a picture of a woman with blonde hair"]
+    _, landmark_img, _ = dataset[120]
     landmark_img = landmark_img.unsqueeze(0).to(device)
     # Create sampling noise:
     n = len(text_prompt)
@@ -69,7 +69,7 @@ def main(args):
         # samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
         samples = vae.decode(samples / 0.18215).sample
     # Save and display images:
-    save_image(samples, f"sample_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
+    save_image(samples, f"sample_w{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
     save_image(landmarks, f"landmark_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
 
 

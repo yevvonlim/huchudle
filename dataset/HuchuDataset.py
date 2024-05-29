@@ -4,6 +4,8 @@ from torch.utils.data import Dataset
 import os
 from torchvision.transforms import ToTensor
 import torch
+import cv2
+
 
 def draw_landmarks(data):
     
@@ -34,7 +36,9 @@ class HuchuDataset(Dataset):
     def __getitem__(self, idx):    
         # img
         img_id = self.data[idx]["image_id"]
-        img = Image.open(os.path.join(self.root_dir, img_id))
+        # img = Image.open(os.path.join(self.root_dir, img_id))
+        img = cv2.imread(os.path.join(self.root_dir, img_id))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
         # caption
         caption = self.data[idx]["caption"]

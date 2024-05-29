@@ -55,15 +55,13 @@ def main(args):
         batch_size = x.shape[0]
         landmark_img = landmark_img.to(device)
         with torch.no_grad():
-            x = vae.encode(x).latent_dist.sample().mul_(0.18215)
-        t = torch.randint(0, diffusion.num_timesteps, (x.shape[0],), device=device)
-        
+            x = vae.encode(x).latent_dist.sample().mul_(0.18215)        
         # Exceptional prompt
         tokens = torch.zeros(batch_size, 77).to(device, torch.int64) + 7788
         
         model_kwargs = dict(y="", landmark=landmark_img, token=tokens)
         # model_kwargs = dict(y="", landmark=landmark_img)
-        z = diffusion.ddim_reverse_sample_loop(model.forward, x, t, model_kwargs=model_kwargs, device=device)
+        z = diffusion.ddim_reverse_sample_loop(model.forward,(batch_size, 3, 256, 256), x, model_kwargs=model_kwargs, device=device)
         z = torch.cat([z, z], 0)
         landmark_img = torch.cat([landmark_img, landmark_img], 0)
         y = y + ("",)
@@ -71,7 +69,7 @@ def main(args):
         model.retain_orig_pos_emb()
         with torch.no_grad():
             samples = diffusion.p_sample_loop(
-                model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device
+                model.forward_with_cfg, z.shape, z, clip_denoised=False,model_kwargs=model_kwargs, progress=True, device=device
             )
             samples,_ = samples.chunk(2, dim=0)
         # samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
