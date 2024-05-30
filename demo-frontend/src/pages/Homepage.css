@@ -1,12 +1,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Freeman&family=Oswald:wght@200&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
 
+/* .container-home {
+  display: flex;
+  flex-direction: row; /* 기본적으로 가로 배열 
+  flex-wrap: wrap;
+  justify-content: center;
+  height: 120vh; /* Viewport height 
+  
+}
+
+.container-section {
+  flex: 1;
+  min-width: 500px; /* 최소 너비를 설정하여 너무 작아지지 않도록 합니다. 
+  max-width: 35%; /* 기본적으로 화면의 절반을 차지하게 합니다. 
+  box-sizing: border-box;
+  justify-content: center;
+  padding-left: 30px;
+  padding-bottom: 30px;
+  padding-right: 30px;
+
+}
+
+@media (max-width: 300px) {
+  .container-home {
+    flex-direction: column; 
+    height: 800vh;
+  }
+
+  .container-section {
+    max-width: 100%; 
+  }
+} */
 .container-home {
   display: flex;
   flex-direction: row; /* 기본적으로 가로 배열 */
   flex-wrap: wrap;
   justify-content: center;
-  height: 100vh; /* Viewport height */
-  
+  min-height: 100vh; /* 변경: 최소 높이를 viewport 높이와 같도록 설정 */
+ 
 }
 
 .container-section {
@@ -18,17 +49,27 @@
   padding-left: 30px;
   padding-bottom: 30px;
   padding-right: 30px;
-
+  margin-top: 20px; /* 위쪽 여백 추가 */
 }
 
-@media (min-width: 32000px) {
+@media (max-width: 300px) {
   .container-home {
-    flex-direction: column; /* 화면이 작아지면 세로 배열 */
+    flex-direction: column; 
+    min-height: auto; /* 변경: 세로로 배열될 때 최소 높이는 자동으로 조정됩니다. */
   }
 
   .container-section {
-    max-width: 100%; /* 화면이 작아지면 전체 너비 */
+    max-width: 100%; 
+    min-width: auto; /* 변경: 세로로 배열될 때 최소 너비는 자동으로 조정됩니다. */
   }
+}
+
+.footer {
+  width: 100%;
+  padding: 20px;
+  background-color: #f8f9fa;
+  position: relative;
+  bottom: 0;
 }
 
 

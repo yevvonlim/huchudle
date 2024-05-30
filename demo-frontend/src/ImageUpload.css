@@ -1,3 +1,0 @@
-<WriteInput accept=".png, .jpeg, .jpg" type="file"        
-    onChange={handleFileUpload}
-/>

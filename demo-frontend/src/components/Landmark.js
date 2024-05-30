@@ -1,8 +1,153 @@
-import React, { useState } from 'react';import Draggable from 'react-draggable';
-import { useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
+import Draggable from 'react-draggable';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const landmarks = {
+  "landmark-0": { "x": 76.8, "y": 120.32 },
+  "landmark-1": { "x": 74.24, "y": 133.12 },
+  "landmark-2": { "x": 74.24, "y": 148.48 },
+  "landmark-3": { "x": 76.8, "y": 163.84 },
+  "landmark-4": { "x": 81.92, "y": 179.2 },
+  "landmark-5": { "x": 89.6, "y": 194.56 },
+  "landmark-6": { "x": 97.28, "y": 207.36 },
+  "landmark-7": { "x": 104.96, "y": 220.16 },
+  "landmark-8": { "x": 120.32, "y": 222.72 },
+  "landmark-9": { "x": 140.8, "y": 222.72 },
+  "landmark-10": { "x": 166.4, "y": 220.16 },
+  "landmark-11": { "x": 189.44, "y": 212.48 },
+  "landmark-12": { "x": 204.8, "y": 199.68 },
+  "landmark-13": { "x": 217.6, "y": 181.76 },
+  "landmark-14": { "x": 220.16, "y": 158.72 },
+  "landmark-15": { "x": 220.16, "y": 133.12 },
+  "landmark-16": { "x": 220.16, "y": 112.64 },
+  "landmark-17": { "x": 74.24, "y": 92.16 },
+  "landmark-18": { "x": 76.8, "y": 87.04 },
+  "landmark-19": { "x": 84.48, "y": 87.04 },
+  "landmark-20": { "x": 92.16, "y": 87.04 },
+  "landmark-21": { "x": 99.84, "y": 89.6 },
+  "landmark-22": { "x": 122.88, "y": 87.04 },
+  "landmark-23": { "x": 138.24, "y": 81.92 },
+  "landmark-24": { "x": 153.6, "y": 81.92 },
+  "landmark-25": { "x": 168.96, "y": 84.48 },
+  "landmark-26": { "x": 181.76, "y": 92.16 },
+  "landmark-27": { "x": 110.08, "y": 104.96 },
+  "landmark-28": { "x": 104.96, "y": 120.32 },
+  "landmark-29": { "x": 102.4, "y": 133.12 },
+  "landmark-30": { "x": 99.84, "y": 145.92 },
+  "landmark-31": { "x": 97.28, "y": 156.16 },
+  "landmark-32": { "x": 99.84, "y": 158.72 },
+  "landmark-33": { "x": 107.52, "y": 161.28 },
+  "landmark-34": { "x": 115.2, "y": 158.72 },
+  "landmark-35": { "x": 122.88, "y": 156.16 },
+  "landmark-36": { "x": 81.92, "y": 110.08 },
+  "landmark-37": { "x": 87.04, "y": 104.96 },
+  "landmark-38": { "x": 94.72, "y": 104.96 },
+  "landmark-39": { "x": 102.4, "y": 110.08 },
+  "landmark-40": { "x": 94.72, "y": 115.2 },
+  "landmark-41": { "x": 87.04, "y": 115.2 },
+  "landmark-42": { "x": 138.24, "y": 110.08 },
+  "landmark-43": { "x": 145.92, "y": 102.4 },
+  "landmark-44": { "x": 156.16, "y": 102.4 },
+  "landmark-45": { "x": 163.84, "y": 107.52 },
+  "landmark-46": { "x": 156.16, "y": 112.64 },
+  "landmark-47": { "x": 145.92, "y": 112.64 },
+  "landmark-48": { "x": 99.84, "y": 184.32 },
+  "landmark-49": { "x": 99.84, "y": 179.2 },
+  "landmark-50": { "x": 104.96, "y": 174.08 },
+  "landmark-51": { "x": 112.64, "y": 176.64 },
+  "landmark-52": { "x": 120.32, "y": 174.08 },
+  "landmark-53": { "x": 138.24, "y": 179.2 },
+  "landmark-54": { "x": 156.16, "y": 184.32 },
+  "landmark-55": { "x": 140.8, "y": 197.12 },
+  "landmark-56": { "x": 128, "y": 199.68 },
+  "landmark-57": { "x": 115.2, "y": 199.68 },
+  "landmark-58": { "x": 102.4, "y": 192 },
+  "landmark-59": { "x": 99.84, "y": 192 },
+  "landmark-60": { "x": 104.96, "y": 184.32 },
+  "landmark-61": { "x": 112.64, "y": 181.76 },
+  "landmark-62": { "x": 120.32, "y": 181.76 },
+  "landmark-63": { "x": 138.24, "y": 181.76 },
+  "landmark-64": { "x": 156.16, "y": 184.32 },
+  "landmark-65": { "x": 140.8, "y": 192 },
+  "landmark-66": { "x": 128, "y": 192 },
+  "landmark-67": { "x": 115.2, "y": 192 }
+};
+
+const landmarks2 = {
+  "landmark-0": { "x": 32.24, "y": 69.12 },
+  "landmark-1": { "x": 32.24, "y": 99.84 },
+  "landmark-2": { "x": 34.8, "y": 130.56 },
+  "landmark-3": { "x": 42.48, "y": 163.84 },
+  "landmark-4": { "x": 57.84, "y": 192 },
+  "landmark-5": { "x": 70.64, "y": 215.04 },
+  "landmark-6": { "x": 91.12, "y": 233.28 },
+  "landmark-7": { "x": 119.28, "y": 245.76 },
+  "landmark-8": { "x": 147.44, "y": 250.88 },
+  "landmark-9": { "x": 178.16, "y": 245.76 },
+  "landmark-10": { "x": 204.4, "y": 235.52 },
+  "landmark-11": { "x": 224.24, "y": 217.6 },
+  "landmark-12": { "x": 239.6, "y": 192 },
+  "landmark-13": { "x": 252.4, "y": 166.4 },
+  "landmark-14": { "x": 260.08, "y": 133.12 },
+  "landmark-15": { "x": 262.64, "y": 99.84 },
+  "landmark-16": { "x": 262.64, "y": 71.68 },
+  "landmark-17": { "x": 62.96, "y": 69.12 },
+  "landmark-18": { "x": 75.76, "y": 61.44 },
+  "landmark-19": { "x": 93.68, "y": 56.32 },
+  "landmark-20": { "x": 111.6, "y": 61.44 },
+  "landmark-21": { "x": 124.4, "y": 69.12 },
+  "landmark-22": { "x": 178.16, "y": 69.12 },
+  "landmark-23": { "x": 190.96, "y": 61.44 },
+  "landmark-24": { "x": 208.88, "y": 56.32 },
+  "landmark-25": { "x": 224.24, "y": 61.44 },
+  "landmark-26": { "x": 237.04, "y": 69.12 },
+  "landmark-27": { "x": 150, "y": 97.28 },
+  "landmark-28": { "x": 150, "y": 115.2 },
+  "landmark-29": { "x": 150, "y": 133.12 },
+  "landmark-30": { "x": 150, "y": 151.04 },
+  "landmark-31": { "x": 126.96, "y": 163.84 },
+  "landmark-32": { "x": 137.2, "y": 168.96 },
+  "landmark-33": { "x": 150, "y": 171.52 },
+  "landmark-34": { "x": 162.8, "y": 168.96 },
+  "landmark-35": { "x": 173.04, "y": 163.84 },
+  "landmark-36": { "x": 68.08, "y": 97.28 },
+  "landmark-37": { "x": 86, "y": 87.04 },
+  "landmark-38": { "x": 103.92, "y": 87.04 },
+  "landmark-39": { "x": 119.28, "y": 97.28 },
+  "landmark-40": { "x": 103.92, "y": 107.52 },
+  "landmark-41": { "x": 86, "y": 107.52 },
+  "landmark-42": { "x": 180.72, "y": 97.28 },
+  "landmark-43": { "x": 198.64, "y": 87.04 },
+  "landmark-44": { "x": 216.56, "y": 87.04 },
+  "landmark-45": { "x": 231.92, "y": 97.28 },
+  "landmark-46": { "x": 216.56, "y": 107.52 },
+  "landmark-47": { "x": 198.64, "y": 107.52 },
+  "landmark-48": { "x": 106.48, "y": 199.68 },
+  "landmark-49": { "x": 121.84, "y": 192 },
+  "landmark-50": { "x": 137.2, "y": 186.88 },
+  "landmark-51": { "x": 152.56, "y": 189.44 },
+  "landmark-52": { "x": 167.92, "y": 186.88 },
+  "landmark-53": { "x": 183.28, "y": 192 },
+  "landmark-54": { "x": 198.64, "y": 199.68 },
+  "landmark-55": { "x": 183.28, "y": 212.48 },
+  "landmark-56": { "x": 167.92, "y": 217.6  },
+  "landmark-57": { "x": 152.56, "y": 222.72 },
+  "landmark-58": { "x": 137.2, "y": 217.6 },
+  "landmark-59": { "x": 121.84, "y": 212.48 },
+  "landmark-60": { "x": 126.96, "y": 199.68 },
+  "landmark-61": { "x": 137.2, "y": 194.56 },
+  "landmark-62": { "x": 167.92, "y": 194.56 },
+  "landmark-63": { "x": 183.28, "y": 194.56 },
+  "landmark-64": { "x": 198.64, "y": 199.68 },
+  "landmark-65": { "x": 183.28, "y": 209.92 },
+  "landmark-66": { "x": 167.92, "y": 212.48 },
+  "landmark-67": { "x": 152.56, "y": 209.92 }
+};
+
+
+  
+const landmarks3 = {
   "landmark-0": { "x": 0.04, "y": 0.27 },
   "landmark-1": { "x": 0.04, "y": 0.39 },
   "landmark-2": { "x": 0.05, "y": 0.51 },
@@ -78,12 +223,13 @@ const landmarks = {
 const Landmark = ({ onFinalPositionsChange }) => {
   const initialCircles = Object.keys(landmarks).map(key => ({
     id: key,
-    x: landmarks[key].x * 256,
-    y: landmarks[key].y * 256
+    x: landmarks[key].x,
+    y: landmarks[key].y 
   }));
 
   const [circles, setCircles] = useState(initialCircles);
   const [hoveredCircle, setHoveredCircle] = useState(null);
+  const [image, setImage] = useState(null);
   const circleRefs = useRef([]);
 
   useEffect(() => {
@@ -96,19 +242,51 @@ const Landmark = ({ onFinalPositionsChange }) => {
     setCircles(newCircles);
   };
 
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const imageData = reader.result;
+        setImage(imageData);
+
+        try {
+          const response = await axios.post('http://localhost:8000/pointlandmark', { image: imageData });
+          if (response.data.result === "issucess") {
+            const newLandmarks = response.data.landmark.map((point, index) => ({
+              id: index.toString(),
+              x: point[0],
+              y: point[1]
+            }));
+            setCircles(newLandmarks);
+          }
+        } catch (error) {
+          console.error('Error uploading image and fetching landmarks:', error);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div style={{
         position: 'relative',
         width: '300px',
         height: '300px',
         border: '1px solid #BCBDC0',
-        borderRadius: '10px'
+        borderRadius: '10px',
+        overflow: 'hidden', // Ensure the image respects the border radius
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundImage: image ? `url(${image})` : 'none',
+        margin: '20px 0' // Optional: Add some margin for better spacing
       }}>
+
         {circles.map((circle, index) => (
           <Draggable
             key={circle.id}
-            defaultPosition={{ x: circle.x+22, y: circle.y }}
+            defaultPosition={{ x: circle.x, y: circle.y }}
             onStop={(e, data) => handleStop(e, data, index)}
           >
             <div
@@ -126,6 +304,17 @@ const Landmark = ({ onFinalPositionsChange }) => {
             />
           </Draggable>
         ))}
+
+      </div>
+      <div>
+        <input
+          type="file"
+          className="form-control"
+          id="imageUpload"
+          accept="image/*"
+          onChange={handleImageUpload}
+          style={{ width: '300px' }} // Set the width of the input button
+        />
       </div>
     </div>
   );

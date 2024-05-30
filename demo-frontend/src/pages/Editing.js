@@ -20,7 +20,7 @@ const RoundedContainer = styled.div`
   align-items: center;
 `;
 
-function Homepage() {
+function Editingpage() {
     const [textInput, setTextInput] = useState('');
     const [finalPositions, setFinalPositions] = useState([]);
     const [image, setImage] = useState(placeholderimg);
@@ -71,7 +71,7 @@ function Homepage() {
         </div> */}
         <div className="container-section">
           <RoundedContainer>
-            <h3>Image Generation Result</h3>
+            <h3>Image Editing Result</h3>
             <p></p>
             <img src={image} alt="Generated result" />
             <p></p>
@@ -82,5 +82,5 @@ function Homepage() {
     );
   }
   
-  export default Homepage;
+  export default Editingpage;
   

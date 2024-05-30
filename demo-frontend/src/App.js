@@ -77,7 +77,7 @@ import './App.css';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom'; // BrowserRouter로 수정
 import Homepage from './pages/Hompage';
 import MainContent from './pages/MainContent';
-import Footer from './Footer';
+import Footer from './components/Footer';
 import Editing from './pages/Editing';
 
 function App() {
