@@ -162,7 +162,7 @@ def main(args):
         state_dict = torch.load(args.ckpt, map_location="cpu")
         model.module.load_state_dict(state_dict["model"], strict=False)
         ema.load_state_dict(state_dict["ema"], strict=False)
-        opt.load_state_dict(state_dict["opt"], strict=False)
+        opt.load_state_dict(state_dict["opt"],)
         logger.info(f"Loaded checkpoint from {args.ckpt}")
 
     
@@ -303,7 +303,7 @@ if __name__ == "__main__":
     parser.add_argument("--data-path", type=str, required=True)
     parser.add_argument("--ann-path", type=str, required=True)
     parser.add_argument("--results-dir", type=str, default="results")
-    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-S/2-Text")
+    parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-L/2-Text")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--epochs", type=int, default=1400)
     parser.add_argument("--global-batch-size", type=int, default=16)

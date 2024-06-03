@@ -58,26 +58,29 @@ def main(args):
             x = vae.encode(x).latent_dist.sample().mul_(0.18215)        
         # Exceptional prompt
         tokens = torch.zeros(batch_size, 77).to(device, torch.int64) + 7788
-        
-        model_kwargs = dict(y="", landmark=landmark_img, token=tokens)
-        # model_kwargs = dict(y="", landmark=landmark_img)
-        z = diffusion.ddim_reverse_sample_loop(model.forward,(batch_size, 3, 256, 256), x, model_kwargs=model_kwargs, device=device)
-        z = torch.cat([z, z], 0)
+        real_step = 15
+        model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), token=tokens)
+        # model_kwargs = dict(y=y[0], landmark=landmark_img)
+        z_tau = diffusion.ddim_reverse_sample_loop(model.forward,(batch_size, 3, 256, 256), x, clip_denoised=False, model_kwargs=model_kwargs, device=device, real_step=real_step)
+        z = torch.cat([z_tau, z_tau], 0)
         landmark_img = torch.cat([landmark_img, landmark_img], 0)
-        y = y + ("",)
+        y = ("A picture of a man with long blonde hair, blue eyes",) + ("",)
+        # y = y + ("", )
         model_kwargs = dict(y=list(y), landmark=landmark_img, cfg_scale=args.cfg_scale)
         model.retain_orig_pos_emb()
         with torch.no_grad():
-            samples = diffusion.p_sample_loop(
-                model.forward_with_cfg, z.shape, z, clip_denoised=False,model_kwargs=model_kwargs, progress=True, device=device
+            samples = diffusion.ddim_sample_loop(
+                model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device, real_step=real_step
             )
             samples,_ = samples.chunk(2, dim=0)
         # samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
         samples = vae.decode(samples / 0.18215).sample
+        noise = vae.decode(z_tau / 0.18215).sample
     
 
         # Save and display images:
         save_image(samples, f"inversion_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
+        save_image(noise, f"noise_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -87,7 +90,7 @@ if __name__ == "__main__":
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="mse")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
     parser.add_argument("--cfg-scale", type=float, default=12.0)
-    parser.add_argument("--num-sampling-steps", type=int, default=250)
+    parser.add_argument("--num-sampling-steps", type=int, default=50)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ckpt", type=str, default=None,
                         help="Optional path to a DiT checkpoint (default: auto-download a pre-trained DiT-XL/2 model).")
