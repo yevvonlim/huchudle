@@ -23,7 +23,8 @@ def draw_landmarks(data):
 
 class HuchuDataset(Dataset):
 
-    def __init__(self, ann_path, root_dir):
+    def __init__(self, ann_path, root_dir, istrain=True):
+        self.istrain = istrain
         self.file_path = ann_path
         self.root_dir = root_dir
         
@@ -49,7 +50,7 @@ class HuchuDataset(Dataset):
         img = ToTensor()(img)
         draw_img = ToTensor()(draw_img)[0:1]
         
-        if torch.rand(1) > 0.5:
+        if torch.rand(1) > 0.5 and self.istrain:
             img = torch.flip(img, [2])
             draw_img = torch.flip(draw_img, [2])
 

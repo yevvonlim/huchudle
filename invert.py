@@ -31,13 +31,13 @@ def main(args):
         assert args.model == "DiT-XL/2", "Only DiT-XL/2 models are available for auto-download."
         assert args.image_size in [256, 512]
         # assert args.num_classes == 1000
-    dataset = HuchuDataset(ann_path=args.ann_path, root_dir=args.data_path)
+    dataset = HuchuDataset(ann_path=args.ann_path, root_dir=args.data_path, istrain=False)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
     # Load model:
     latent_size = args.image_size // 8
     model = DiT_models[args.model](
         input_size=latent_size,
-        exceptional_prompt=True
+        exceptional_prompt=True if args.inversion == "exceptional" else False,
         # num_classes=args.num_classes
     ).to(device)
     # Auto-download a pre-trained model or load a custom DiT checkpoint from train.py:
@@ -50,53 +50,58 @@ def main(args):
     
     # exceptional prompt inversion
     
-    for x, landmark_img, y in dataloader:
-        model.exceptional_prompt = model.exceptional_prompt.to(device)        
+    for i, (x, landmark_img, y) in enumerate(dataloader):
+        if args.inversion == "exceptional":
+            model.exceptional_prompt = model.exceptional_prompt.to(device)        
         x = x.to(device)
         batch_size = x.shape[0]
         landmark_img = landmark_img.to(device)
         with torch.no_grad():
             x = vae.encode(x).latent_dist.sample().mul_(0.18215)        
         real_step = 50
-        # model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), token=tokens), 
-        model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), text_emb=model.exceptional_prompt)
-        # model_kwargs = dict(y=y[0], landmark=landmark_img)
+        if args.inversion == "exceptional":
+            model_kwargs = dict(y="", landmark=landmark_img, text_emb=model.exceptional_prompt)
+        elif args.inversion == "unconditional":
+            model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img))
+        elif args.inversion == "npi" or args.inversion == "cfg":
+            model_kwargs = dict(y=list(y), landmark=landmark_img)
         z = diffusion.ddim_reverse_sample_loop(model.forward,(batch_size, 3, 256, 256), x, clip_denoised=False, model_kwargs=model_kwargs, device=device, real_step=real_step, progress=True)
-        # z = torch.cat([z_tau, z_tau], 0)
-        # landmark_img = torch.cat([landmark_img, torch.zeros_like(landmark_img)], 0)
-        # landmark_uncond = torch.zeros_like(landmark_img).to(device)
-        # y = ("A picture of a man with long blonde hair, blue eyes",) + ("",)
-        # y = y + ("", ) # uncond_emb will be replaced by the exceptional embedding
-        # model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device))
-        # model.retain_orig_pos_emb()
-        with torch.no_grad():
-            # samples = diffusion.ddim_sample_loop(
-            #     model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device, real_step=real_step
-            # )
-            samples = diffusion.ddim_sample_loop(
+        
+        if args.inversion == "cfg":
+            z = torch.cat([z, z], 0)
+            landmark_img = torch.cat([landmark_img, torch.zeros_like(landmark_img)], 0)
+            y = y + ("",)
+            model_kwargs = dict(y=list(y), landmark=landmark_img, cfg_scale=args.cfg_scale)
+            with torch.no_grad():
+                samples = diffusion.ddim_sample_loop(
+                model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device, real_step=real_step
+                )
+            samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
+        else:
+            with torch.no_grad():
+                samples = diffusion.ddim_sample_loop(
                 model.forward, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device, real_step=real_step
-            )
-            # samples,_ = samples.chunk(2, dim=0)
-        # samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
+                )
+            
         samples = vae.decode(samples / 0.18215).sample
         noise = vae.decode(z / 0.18215).sample
     
-
         # Save and display images:
-        save_image(samples, f"inversion_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
-        save_image(noise, f"noise_{args.seed}.png", nrow=4, normalize=True, value_range=(-1, 1))
+        save_image(samples, f"{args.inversion}_inversion_{args.seed}_ppl_sample_{i}.png", nrow=4, normalize=True, value_range=(-1, 1))
+        save_image(noise, f"{args.inversion}_noise_{args.seed}_ppl_sample_{i}.png", nrow=4, normalize=True, value_range=(-1, 1))
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-path", type=str, required=True)
     parser.add_argument("--ann-path", type=str, required=True)
     parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-L/2-Text")
-    parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="mse")
+    parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
-    parser.add_argument("--cfg-scale", type=float, default=12.0)
+    parser.add_argument("--cfg-scale", type=float, default=7.0)
     parser.add_argument("--num-sampling-steps", type=int, default=50)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ckpt", type=str, default=None,
                         help="Optional path to a DiT checkpoint (default: auto-download a pre-trained DiT-XL/2 model).")
+    parser.add_argument("--inversion", type=str, default="exceptional", choices=["exceptional", "unconditional", "npi", "cfg"])
     args = parser.parse_args()
     main(args)
