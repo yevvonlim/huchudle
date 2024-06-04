@@ -37,6 +37,7 @@ def main(args):
     latent_size = args.image_size // 8
     model = DiT_models[args.model](
         input_size=latent_size,
+        exceptional_prompt=True
         # num_classes=args.num_classes
     ).to(device)
     # Auto-download a pre-trained model or load a custom DiT checkpoint from train.py:
@@ -56,19 +57,17 @@ def main(args):
         landmark_img = landmark_img.to(device)
         with torch.no_grad():
             x = vae.encode(x).latent_dist.sample().mul_(0.18215)        
-        # Exceptional prompt
-        tokens = torch.zeros(batch_size, 77).to(device, torch.int64) + 7788
         real_step = 50
-        # model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), token=tokens)
-        model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), text_emb = model.exceptional_prompt)
+        # model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), token=tokens), 
+        model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), text_emb=model.exceptional_prompt)
         # model_kwargs = dict(y=y[0], landmark=landmark_img)
-        z = diffusion.ddim_reverse_sample_loop(model.forward,(batch_size, 3, 256, 256), x, clip_denoised=False, model_kwargs=model_kwargs, device=device, real_step=real_step)
+        z = diffusion.ddim_reverse_sample_loop(model.forward,(batch_size, 3, 256, 256), x, clip_denoised=False, model_kwargs=model_kwargs, device=device, real_step=real_step, progress=True)
         # z = torch.cat([z_tau, z_tau], 0)
         # landmark_img = torch.cat([landmark_img, torch.zeros_like(landmark_img)], 0)
-        landmark_uncond = torch.zeros_like(landmark_img).to(device)
+        # landmark_uncond = torch.zeros_like(landmark_img).to(device)
         # y = ("A picture of a man with long blonde hair, blue eyes",) + ("",)
         # y = y + ("", ) # uncond_emb will be replaced by the exceptional embedding
-        model_kwargs = dict(y="", landmark=landmark_uncond, text_emb = model.exceptional_prompt)
+        # model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device))
         # model.retain_orig_pos_emb()
         with torch.no_grad():
             # samples = diffusion.ddim_sample_loop(
