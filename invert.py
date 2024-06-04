@@ -42,7 +42,7 @@ def main(args):
     # Auto-download a pre-trained model or load a custom DiT checkpoint from train.py:
     ckpt_path = args.ckpt or f"DiT-XL-2-{args.image_size}x{args.image_size}.pt"
     state_dict = find_model(ckpt_path)
-    model.load_state_dict(state_dict)
+    model.load_state_dict(state_dict, strict=False)
     model.eval()  # important!
     diffusion = create_diffusion(str(args.num_sampling_steps))
     vae = AutoencoderKL.from_pretrained(f"stabilityai/sd-vae-ft-{args.vae}").to(device)
@@ -50,7 +50,7 @@ def main(args):
     # exceptional prompt inversion
     
     for x, landmark_img, y in dataloader:
-        model.remove_pos_emb(device)
+        model.exceptional_prompt = model.exceptional_prompt.to(device)        
         x = x.to(device)
         batch_size = x.shape[0]
         landmark_img = landmark_img.to(device)
@@ -58,24 +58,29 @@ def main(args):
             x = vae.encode(x).latent_dist.sample().mul_(0.18215)        
         # Exceptional prompt
         tokens = torch.zeros(batch_size, 77).to(device, torch.int64) + 7788
-        real_step = 15
-        model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), token=tokens)
+        real_step = 50
+        # model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), token=tokens)
+        model_kwargs = dict(y="", landmark=torch.zeros_like(landmark_img).to(device), text_emb = model.exceptional_prompt)
         # model_kwargs = dict(y=y[0], landmark=landmark_img)
-        z_tau = diffusion.ddim_reverse_sample_loop(model.forward,(batch_size, 3, 256, 256), x, clip_denoised=False, model_kwargs=model_kwargs, device=device, real_step=real_step)
-        z = torch.cat([z_tau, z_tau], 0)
-        landmark_img = torch.cat([landmark_img, landmark_img], 0)
-        y = ("A picture of a man with long blonde hair, blue eyes",) + ("",)
-        # y = y + ("", )
-        model_kwargs = dict(y=list(y), landmark=landmark_img, cfg_scale=args.cfg_scale)
-        model.retain_orig_pos_emb()
+        z = diffusion.ddim_reverse_sample_loop(model.forward,(batch_size, 3, 256, 256), x, clip_denoised=False, model_kwargs=model_kwargs, device=device, real_step=real_step)
+        # z = torch.cat([z_tau, z_tau], 0)
+        # landmark_img = torch.cat([landmark_img, torch.zeros_like(landmark_img)], 0)
+        landmark_uncond = torch.zeros_like(landmark_img).to(device)
+        # y = ("A picture of a man with long blonde hair, blue eyes",) + ("",)
+        # y = y + ("", ) # uncond_emb will be replaced by the exceptional embedding
+        model_kwargs = dict(y="", landmark=landmark_uncond, text_emb = model.exceptional_prompt)
+        # model.retain_orig_pos_emb()
         with torch.no_grad():
+            # samples = diffusion.ddim_sample_loop(
+            #     model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device, real_step=real_step
+            # )
             samples = diffusion.ddim_sample_loop(
-                model.forward_with_cfg, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device, real_step=real_step
+                model.forward, z.shape, z, clip_denoised=False, model_kwargs=model_kwargs, progress=True, device=device, real_step=real_step
             )
-            samples,_ = samples.chunk(2, dim=0)
+            # samples,_ = samples.chunk(2, dim=0)
         # samples, _ = samples.chunk(2, dim=0)  # Remove null class samples
         samples = vae.decode(samples / 0.18215).sample
-        noise = vae.decode(z_tau / 0.18215).sample
+        noise = vae.decode(z / 0.18215).sample
     
 
         # Save and display images:

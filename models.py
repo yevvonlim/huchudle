@@ -268,6 +268,7 @@ class DiT(nn.Module):
         mlp_ratio=4.0,
         class_dropout_prob=0.1,
         learn_sigma=True,
+        exceptional_prompt=True,
     ):
         super().__init__()
         self.learn_sigma = learn_sigma
@@ -302,6 +303,14 @@ class DiT(nn.Module):
         ])
         self.final_layer = FinalLayer(hidden_size, num_heads, patch_size, self.out_channels, context_dim=self.context_dim)
         self.initialize_weights()
+
+        if exceptional_prompt:
+            self.remove_pos_emb()
+            token = torch.zeros(1, 77).to(torch.int64) + 7788
+            self.exceptional_prompt = self.text_embedder("", False, token)
+            self.retain_orig_pos_emb()
+        else:
+            self.exceptional_prompt = None
 
     def initialize_weights(self):
         # Initialize transformer layers:
@@ -354,7 +363,7 @@ class DiT(nn.Module):
         imgs = x.reshape(shape=(x.shape[0], c, h * p, h * p))
         return imgs
 
-    def forward(self, x, t, y, landmark, token=None):
+    def forward(self, x, t, y, landmark, token=None, text_emb=None):
         """
         Forward pass of DiT.
         x: (N, C, H, W) tensor of spatial inputs (images or latent representations of images)
@@ -368,7 +377,10 @@ class DiT(nn.Module):
         x = self.x_embedder(x) + self.pos_embed  # (N, T, D), where T = H * W / patch_size ** 2
         t = self.t_embedder(t)                   # (N, D)
         # y = self.y_embedder(y, self.training)  # (N, D)
-        y = self.text_embedder(y, self.training, token) # (N, L, D)
+        if text_emb == None:
+            y = self.text_embedder(y, self.training, token) # (N, L, D)
+        else:
+            y = text_emb
         for block in self.blocks:
             x = block(x, t, y)                   # (N, T, D)
         x = self.final_layer(x, t, y)            # (N, T, patch_size ** 2 * out_channels)
@@ -384,7 +396,11 @@ class DiT(nn.Module):
         half = x[:len(x)//2]
         combined = torch.cat([half, half], dim=0)
         # combined = x
-        model_out = self.forward(combined, t, y, landmark)
+        y_cond = y[:len(y)//2]
+        y_cond_emb = self.text_embedder(y_cond, False)
+        y_uncond_emb = self.text_embedder("", False) if self.exceptional_prompt is None else self.exceptional_prompt.repeat(len(y)//2, 1, 1)
+        y_emb = torch.cat([y_cond_emb, y_uncond_emb], dim=0)
+        model_out = self.forward(combined, t, y, landmark, text_emb=y_emb)
         # For exact reproducibility reasons, we apply classifier-free guidance on only
         # three channels by default. The standard approach to cfg applies it to all channels.
         # This can be done by uncommenting the following line and commenting-out the line following that.
@@ -396,9 +412,10 @@ class DiT(nn.Module):
         return torch.cat([eps, rest], dim=1)
 
 
-    def remove_pos_emb(self, device):
+    def remove_pos_emb(self):
         '''Remove positional embedding of text embedder.
         '''
+        device = self.text_embedder.text_encoder.device
         # delete the position embeddings
         n = self.text_embedder.text_encoder.text_model.embeddings.position_embedding.num_embeddings
         dim = self.text_embedder.text_encoder.text_model.embeddings.position_embedding.embedding_dim
