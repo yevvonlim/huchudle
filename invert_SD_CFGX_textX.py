@@ -21,7 +21,7 @@ pipe.scheduler = DDIMScheduler.from_config(pipe.scheduler.config)
 pipe.to(device)
 
 # Sample function (regular DDIM)
-
+@torch.no_grad()
 def sample(
     prompt,
     start_step=0,
@@ -29,15 +29,15 @@ def sample(
     guidance_scale=3.5,
     num_inference_steps=30,
     num_images_per_prompt=1,
-    do_classifier_free_guidance=True,
+    do_classifier_free_guidance=False,
     negative_prompt="",
     device=device,
 ):
 
     # Encode prompt
-    text_embeddings = pipe.encode_prompt(
+    text_embeddings ,_ = pipe.encode_prompt(
         prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt
-    )
+    ) # text embedding이 tensor -> tuple 
 
     # Set num inference steps
     pipe.scheduler.set_timesteps(num_inference_steps, device=device)
@@ -90,16 +90,18 @@ def invert(
     guidance_scale=3.5,
     num_inference_steps=50,
     num_images_per_prompt=1,
-    do_classifier_free_guidance=True, # 조정
+    do_classifier_free_guidance=False, # 조정
     negative_prompt="",
     device=device,
 ):
    
     # Encode prompt
-    text_embeddings = pipe.encode_prompt(
-        prompt, device, num_images_per_prompt, do_classifier_free_guidance, [negative_prompt]
-    )
+    text_embeddings ,_ = pipe.encode_prompt(
+        prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt
+    ) # text embedding이 tensor -> tuple 
 
+
+    print(text_embeddings)
     # Latents are now the specified start latents
     latents = start_latents.clone()
 
@@ -123,6 +125,7 @@ def invert(
         # Expand the latents if we are doing classifier free guidance
         latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
         latent_model_input = pipe.scheduler.scale_model_input(latent_model_input, t)
+
 
         # Predict the noise residual
         noise_pred = pipe.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
@@ -150,7 +153,7 @@ def invert(
 def main(args):
     # Setup PyTorch:
     torch.manual_seed(args.seed)
-    torch.set_grad_enabled(False)
+    torch.set_grad_enabled(True)
 
     dataset = OurDataset(ann_path=args.ann_path,root_dir=args.data_path)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
@@ -165,7 +168,9 @@ def main(args):
   
 
     for i, (img, cap) in enumerate(dataloader):
-        prompt = list(cap)
+        # prompt = cap[0] #str
+        prompt=""
+        
         img = img.to(device)
        # Encode with VAE
         with torch.no_grad(),torch.autocast('cuda'):
@@ -177,7 +182,7 @@ def main(args):
         start_step = 0
         
         samples = sample(
-            prompt,
+            prompt="",
             start_latents=inverted_latents[-(start_step + 1)][None],
             start_step=start_step,
             num_inference_steps=50,
