@@ -24,6 +24,7 @@ class OurDataset(Dataset):
         #img
         image_id = self.data[idx]["image_id"]
         img = cv2.imread(os.path.join(self.root_dir, image_id))
+        img = cv2.resize(img,(512,512))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = ToTensor()(img)
 
@@ -31,7 +32,7 @@ class OurDataset(Dataset):
         cap = self.data[idx]["caption"]
         
         
-        return img, cap
+        return img, cap, image_id
 
 
 
