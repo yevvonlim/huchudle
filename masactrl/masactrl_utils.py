@@ -240,6 +240,9 @@ def register_attention_editor_dit(model, editor: AttentionBase):
             context = context if is_cross else x
             k = self.to_k(context)
             v = self.to_v(context)
+
+            # print(f"is cross: {is_cross}, q: {q.shape}, k: {k.shape}, v: {v.shape}")
+
             q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
             sim = torch.einsum('b i d, b j d -> b i j', q, k) * self.scale
 

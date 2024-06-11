@@ -50,13 +50,15 @@ def main(args):
     
     pipeline = FACEPipeline(model, diffusion, vae, inversion=args.inversion, real_step=args.num_sampling_steps, device=device)
     # exceptional prompt inversion
-    new_prompt = "a picture of a man with mustache."
+    new_prompt = "a picture of a woman with long blond hair."
+    new_landmark_img = dataset[0][1].to(device).unsqueeze(0)
     for i, (x, landmark_img, y) in enumerate(dataloader):
         x = x.to(device)
         landmark_img = landmark_img.to(device)
 
-        z = pipeline.invert(x, landmark_img, list(y))
-        samples = pipeline.edit(new_prompt, landmark_img, landmark_img, z)
+        z, intermediates = pipeline.invert(x, landmark_img, list(y), return_intermediate=True)
+        z = torch.cat([z]*2, 0).to(device)
+        samples = pipeline.edit(new_prompt, y[0], new_landmark_img, landmark_img, z, cfg_scale=args.cfg_scale, intermediates=intermediates[::-1])
         # Save and display images:
         # save_image(samples, f"{args.inversion}_inversion_{args.seed}_ppl_sample_{i}.png", nrow=4, normalize=True, value_range=(-1, 1))
         
@@ -67,7 +69,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, choices=list(DiT_models.keys()), default="DiT-L/2-Text")
     parser.add_argument("--vae", type=str, choices=["ema", "mse"], default="ema")
     parser.add_argument("--image-size", type=int, choices=[256, 512], default=256)
-    parser.add_argument("--cfg-scale", type=float, default=7.0)
+    parser.add_argument("--cfg-scale", type=float, default=5.0)
     parser.add_argument("--num-sampling-steps", type=int, default=50)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--ckpt", type=str, default=None,

@@ -611,7 +611,8 @@ class GaussianDiffusion:
         device=None,
         progress=False,
         eta=0.0,
-        real_step=0
+        real_step=0,
+        return_intermediate=False
     ):
         """
         Generate samples from the model using DDIM.
@@ -619,6 +620,7 @@ class GaussianDiffusion:
         Same usage as p_sample_loop().
         """
         final = None
+        intermediates = []
         for sample in self.ddim_reverse_sample_loop_progressive(
             model,
             shape,
@@ -633,7 +635,9 @@ class GaussianDiffusion:
             real_step=real_step
         ):
             final = sample
-        return final["sample"]
+            if return_intermediate:
+                intermediates.append(sample)
+        return final["sample"], intermediates
 
     def ddim_reverse_sample_loop_progressive(
         self,
@@ -698,7 +702,8 @@ class GaussianDiffusion:
         device=None,
         progress=False,
         eta=0.0,
-        real_step=0
+        real_step=0,
+        intermediates=[]
     ):
         """
         Generate samples from the model using DDIM.
@@ -716,7 +721,8 @@ class GaussianDiffusion:
             device=device,
             progress=progress,
             eta=eta,
-            real_step=real_step
+            real_step=real_step,
+            intermediates=intermediates
         ):
             final = sample
         return final["sample"]
@@ -733,7 +739,8 @@ class GaussianDiffusion:
         device=None,
         progress=False,
         eta=0.0,
-        real_step=0
+        real_step=0,
+        intermediates=[]
     ):
         """
         Use DDIM to sample from the model and yield intermediate samples from
@@ -755,7 +762,7 @@ class GaussianDiffusion:
 
             indices = tqdm(indices)
 
-        for i in indices:
+        for idx, i in enumerate(indices):
             t = th.tensor([i] * shape[0], device=device)
             with th.no_grad():
                 out = self.ddim_sample(
@@ -770,6 +777,9 @@ class GaussianDiffusion:
                 )
                 yield out
                 img = out["sample"]
+                # if len(intermediates) > 0:
+                #     img[2] = intermediates[idx]['sample'] # 
+                #     img[3] = intermediates[idx]['sample'] #
 
     def _vb_terms_bpd(
             self, model, x_start, x_t, t, clip_denoised=True, model_kwargs=None

@@ -60,14 +60,14 @@ class MutualSelfAttentionControl(AttentionBase):
         if is_cross or self.cur_step not in self.step_idx or self.cur_att_layer // 2 not in self.layer_idx:
             return super().forward(q, k, v, sim, attn, is_cross, place_in_unet, num_heads, **kwargs)
 
-        q_edit, q_orig = q.chunk(2)
-        k_edit, k_orig = k.chunk(2)
-        v_edit, v_orig = v.chunk(2)
-        attn_edit, attn_orig = attn.chunk(2)
+        q_c, q_u = q.chunk(2)
+        k_c, k_u= k.chunk(2)
+        v_c, v_u = v.chunk(2)
+        attn_c, attn_u = attn.chunk(2)
 
-        out_edit = self.attn_batch(q_edit, k_orig, v_orig, sim[:num_heads], attn_edit, is_cross, place_in_unet, num_heads, **kwargs)
-        out_orig = self.attn_batch(q_orig, k_orig, v_orig, sim[:num_heads], attn_orig, is_cross, place_in_unet, num_heads, **kwargs)
-        out = torch.cat([out_edit, out_orig], dim=0)
+        out_c = self.attn_batch(q_c, k_c[:num_heads], v_c[:num_heads], sim[:num_heads], attn_c, is_cross, place_in_unet, num_heads, **kwargs)
+        out_u = self.attn_batch(q_u, k_u[:num_heads], v_u[:num_heads], sim[:num_heads], attn_u, is_cross, place_in_unet, num_heads, **kwargs)
+        out = torch.cat([out_c, out_u], dim=0)
 
         return out
 

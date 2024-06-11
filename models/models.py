@@ -398,7 +398,7 @@ class DiT(nn.Module):
         # combined = x
         y_cond = y[:len(y)//2]
         y_cond_emb = self.text_embedder(y_cond, False)
-        y_uncond_emb = self.text_embedder("", False) if self.exceptional_prompt is None else self.exceptional_prompt.repeat(len(y)//2, 1, 1)
+        y_uncond_emb = self.text_embedder([""]*(len(y)//2), False) if self.exceptional_prompt is None else self.exceptional_prompt.repeat(len(y)//2, 1, 1)
         y_emb = torch.cat([y_cond_emb, y_uncond_emb], dim=0)
         model_out = self.forward(combined, t, y, landmark, text_emb=y_emb)
         # For exact reproducibility reasons, we apply classifier-free guidance on only
