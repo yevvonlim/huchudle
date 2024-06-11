@@ -58,8 +58,8 @@ def main(args):
         x = x.to(device)
         landmark_img = landmark_img.to(device)
         z_T, intermediates = pipeline.invert(x, landmark_img, list(y), return_intermediate=False, progress=False)
-        z_0 = pipeline.sample(list(y), landmark_img, latent=z_T, save_img=False, progress=False)
-        x_0 = vae.decode(z_0 / 0.18215).sample 
+        x_0 = pipeline.sample(list(y), landmark_img, latent=z_T, save_img=False, progress=False)
+        
         MAE += torch.nn.functional.l1_loss(x, x_0)
     
     MAE /= len(dataloader)

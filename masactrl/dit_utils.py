@@ -92,7 +92,7 @@ class FACEPipeline:
                     z,
                     clip_denoised=False,
                     model_kwargs=model_kwargs,
-                    progress=True,
+                    progress=progress,
                     device=self.device,
                     real_step=self.real_step)
         
