@@ -18,8 +18,284 @@ from models import DiT_models
 import argparse
 from models import TextEmbedder
 from transformers import CLIPTextModel, CLIPTokenizer
-from dataset import HuchuDataset
+from dataset import HuchuDataset, draw_landmarks
 from masactrl import FACEPipeline
+from torchvision.transforms import ToTensor
+
+
+TARGET_LD = [[30,74],
+            [
+                30,
+                101
+            ],
+            [
+                33,
+                128
+            ],
+            [
+                39,
+                154
+            ],
+            [
+                48,
+                178
+            ],
+            [
+                60,
+                199
+            ],
+            [
+                78,
+                217
+            ],
+            [
+                104,
+                223
+            ],
+            [
+                128,
+                223
+            ],
+            [
+                154,
+                223
+            ],
+            [
+                178,
+                220
+            ],
+            [
+                199,
+                208
+            ],
+            [
+                214,
+                193
+            ],
+            [
+                223,
+                169
+            ],
+            [
+                229,
+                145
+            ],
+            [
+                232,
+                119
+            ],
+            [
+                232,
+                92
+            ],
+            [
+                47,
+                50
+            ],
+            [
+                62,
+                38
+            ],
+            [
+                80,
+                35
+            ],
+            [
+                98,
+                38
+            ],
+            [
+                113,
+                47
+            ],
+            [
+                151,
+                47
+            ],
+            [
+                166,
+                41
+            ],
+            [
+                184,
+                41
+            ],
+            [
+                199,
+                44
+            ],
+            [
+                214,
+                56
+            ],
+            [
+                130,
+                74
+            ],
+            [
+                128,
+                98
+            ],
+            [
+                125,
+                119
+            ],
+            [
+                125,
+                139
+            ],
+            [
+                107,
+                148
+            ],
+            [
+                116,
+                151
+            ],
+            [
+                125,
+                157
+            ],
+            [
+                136,
+                154
+            ],
+            [
+                145,
+                151
+            ],
+            [
+                65,
+                74
+            ],
+            [
+                77,
+                68
+            ],
+            [
+                92,
+                71
+            ],
+            [
+                104,
+                83
+            ],
+            [
+                89,
+                83
+            ],
+            [
+                74,
+                80
+            ],
+            [
+                160,
+                86
+            ],
+            [
+                172,
+                74
+            ],
+            [
+                187,
+                74
+            ],
+            [
+                199,
+                80
+            ],
+            [
+                187,
+                86
+            ],
+            [
+                172,
+                86
+            ],
+            [
+                89,
+                178
+            ],
+            [
+                101,
+                172
+            ],
+            [
+                116,
+                169
+            ],
+            [
+                125,
+                175
+            ],
+            [
+                136,
+                172
+            ],
+            [
+                154,
+                175
+            ],
+            [
+                169,
+                178
+            ],
+            [
+                154,
+                193
+            ],
+            [
+                139,
+                199
+            ],
+            [
+                125,
+                202
+            ],
+            [
+                113,
+                199
+            ],
+            [
+                101,
+                193
+            ],
+            [
+                95,
+                178
+            ],
+            [
+                113,
+                181
+            ],
+            [
+                125,
+                184
+            ],
+            [
+                136,
+                181
+            ],
+            [
+                166,
+                181
+            ],
+            [
+                136,
+                184
+            ],
+            [
+                125,
+                187
+            ],
+            [
+                113,
+                184
+            ]
+        ]
+
+TARGET_LANDMARK = draw_landmarks({"landmark": TARGET_LD})
+TARGET_LANDMARK = ToTensor()(TARGET_LANDMARK)[0:1]
 
 def main(args):
     # Setup PyTorch:
@@ -50,15 +326,16 @@ def main(args):
     
     pipeline = FACEPipeline(model, diffusion, vae, inversion=args.inversion, real_step=args.num_sampling_steps, device=device)
     # exceptional prompt inversion
-    new_prompt = "a picture of a woman with long blond hair."
-    new_landmark_img = dataset[0][1].to(device).unsqueeze(0)
+    # new_prompt = "a picture of a woman with long blond hair."
+    # new_landmark_img = dataset[0][1].to(device).unsqueeze(0)
+    new_landmark_img = TARGET_LANDMARK.to(device).unsqueeze(0)
     for i, (x, landmark_img, y) in enumerate(dataloader):
         x = x.to(device)
         landmark_img = landmark_img.to(device)
 
         z, intermediates = pipeline.invert(x, landmark_img, list(y), return_intermediate=True)
         z = torch.cat([z]*2, 0).to(device)
-        samples = pipeline.edit(new_prompt, y[0], new_landmark_img, landmark_img, z, cfg_scale=args.cfg_scale, intermediates=intermediates[::-1])
+        samples = pipeline.edit(y[0], y[0], new_landmark_img, landmark_img, z, cfg_scale=args.cfg_scale, intermediates=intermediates[::-1])
         # Save and display images:
         # save_image(samples, f"{args.inversion}_inversion_{args.seed}_ppl_sample_{i}.png", nrow=4, normalize=True, value_range=(-1, 1))
         

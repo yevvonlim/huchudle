@@ -37,7 +37,7 @@ class FACEPipeline:
         self.device = device
 
 
-    def invert(self, image, landmark_img, prompt, return_intermediate=False):
+    def invert(self, image, landmark_img, prompt, return_intermediate=False, progress=True):
         device = self.device
         with torch.no_grad():
             x = self.vae.encode(image).latent_dist.sample().mul_(0.18215)
@@ -56,13 +56,13 @@ class FACEPipeline:
                                                     model_kwargs=model_kwargs,
                                                     device=device,
                                                     real_step=self.real_step,
-                                                    progress=True,
+                                                    progress=progress,
                                                     return_intermediate=return_intermediate,)
     
         return z, intermediates
     
 
-    def sample(self, prompt:str, landmark_img, latent=None, save_img=True):
+    def sample(self, prompt:str, landmark_img, latent=None, save_img=True, progress=True):
         if latent is None:
             z = torch.randn(1, 4, 256//8, 256//8, device=self.device)
         else:
@@ -80,7 +80,7 @@ class FACEPipeline:
                     z,
                     clip_denoised=False,
                     model_kwargs=model_kwargs,
-                    progress=True,
+                    progress=progress,
                     device=self.device,
                     real_step=self.real_step)
         else:
@@ -104,7 +104,7 @@ class FACEPipeline:
     
     def edit(self, new_prompt:str, orig_prompt:str,  new_landmark_img, orig_landmark_img, latent, intermediates=[], cfg_scale=5., save_img=True):
         z = torch.cat([latent, latent], 0).to(self.device)
-        editor = MutualSelfAttentionControl(model_type="DiT-L-Text", start_step=0, start_layer=0)
+        editor = MutualSelfAttentionControl(model_type="DiT-L-Text", start_step=5, start_layer=15)
         register_attention_editor_dit(self.model, editor)
         y = [orig_prompt, new_prompt, orig_prompt, new_prompt]
         landmark_img = torch.cat([orig_landmark_img, 
@@ -127,7 +127,7 @@ class FACEPipeline:
         samples, _ = samples.chunk(2, dim=0)
         samples = self.vae.decode(samples / 0.18215).sample
         if save_img:
-            save_image(samples, f"edit_{new_prompt}.png", nrow=4, normalize=True, value_range=(-1, 1))
+            save_image(samples, f"{self.inversion}_edit_{new_prompt}.png", nrow=4, normalize=True, value_range=(-1, 1))
 
         return samples
 

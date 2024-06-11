@@ -777,9 +777,9 @@ class GaussianDiffusion:
                 )
                 yield out
                 img = out["sample"]
-                # if len(intermediates) > 0:
-                #     img[2] = intermediates[idx]['sample'] # 
-                #     img[3] = intermediates[idx]['sample'] #
+                if len(intermediates) > 0:
+                    img[2] = intermediates[idx]['sample'] # 
+                    img[0] = intermediates[idx]['sample'] #
 
     def _vb_terms_bpd(
             self, model, x_start, x_t, t, clip_denoised=True, model_kwargs=None
