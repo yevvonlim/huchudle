@@ -23,6 +23,7 @@ from models import DiT_models
 import argparse
 from masactrl.masactrl import MutualSelfAttentionControl
 from masactrl.masactrl_utils import register_attention_editor_dit
+from typing import List
 
 '''FACE: Facial Attribute Control and Editing
 '''
@@ -62,7 +63,7 @@ class FACEPipeline:
         return z, intermediates
     
 
-    def sample(self, prompt:str, landmark_img, latent=None, save_img=True, progress=True):
+    def sample(self, prompt:List[str], landmark_img, latent=None, save_img=True, progress=True):
         if latent is None:
             z = torch.randn(1, 4, 256//8, 256//8, device=self.device)
         else:
@@ -71,7 +72,7 @@ class FACEPipeline:
         if self.inversion == "cfg":
             z = torch.cat([z, z], 0)
             landmark_img = torch.cat([landmark_img, torch.zeros_like(landmark_img)], 0)
-            y = y + ("",)
+            y = prompt + ["",]
             model_kwargs = dict(y=list(y), landmark=landmark_img, cfg_scale=5.)
             with torch.no_grad():
                 samples = self.diffusion.ddim_sample_loop(
@@ -83,6 +84,7 @@ class FACEPipeline:
                     progress=progress,
                     device=self.device,
                     real_step=self.real_step)
+            samples, _ = samples.chunk(2, dim=0)
         else:
             model_kwargs = dict(y=list(prompt), landmark=landmark_img)
             with torch.no_grad():

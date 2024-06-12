@@ -8,8 +8,10 @@
 Sample new images from a pre-trained DiT.
 """
 import torch
+import os.path as osp
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
+import os 
 from torchvision.utils import save_image
 from diffusion import create_diffusion
 from diffusers.models import AutoencoderKL
@@ -37,6 +39,8 @@ def main(args):
         # assert args.num_classes == 1000
     dataset = HuchuDataset(ann_path=args.ann_path, root_dir=args.data_path, istrain=False)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
+
+    os.makedirs(osp.join(args.save_dir, args.inversion), exist_ok=True) 
     # Load model:
     latent_size = args.image_size // 8
     model = DiT_models[args.model](
@@ -59,13 +63,13 @@ def main(args):
         landmark_img = landmark_img.to(device)
         z_T, intermediates = pipeline.invert(x, landmark_img, list(y), return_intermediate=False, progress=False)
         x_0 = pipeline.sample(list(y), landmark_img, latent=z_T, save_img=False, progress=False)
-        
+        save_image(torch.cat([x, x_0]), osp.join(args.save_dir, args.inversion, f"sample_{i}.png"), normalize=True, value_range=(-1, 1))
         MAE += torch.nn.functional.l1_loss(x, x_0)
     
     MAE /= len(dataloader)
     print(f"Mean Absolute Error: {MAE} on {args.data_path} with {args.ann_path}")
-    with open(f"mae_{args.inversion}_STEP{args.num_sampling_steps}_CELEBAHQ.txt", "w") as f:
-        f.write(MAE)
+    with open(osp.join(args.save_dir, args.inversion, f"mae_{args.inversion}_STEP{args.num_sampling_steps}_CELEBAHQ.txt"), "w") as f:
+        f.write(str(MAE.cpu().item()))
 
         
 if __name__ == "__main__":
@@ -81,5 +85,6 @@ if __name__ == "__main__":
     parser.add_argument("--ckpt", type=str, default=None,
                         help="Optional path to a DiT checkpoint (default: auto-download a pre-trained DiT-XL/2 model).")
     parser.add_argument("--inversion", type=str, default="exceptional", choices=["exceptional", "unconditional", "npi", "cfg"])
+    parser.add_argument("--save_dir", type=str)
     args = parser.parse_args()
     main(args)
