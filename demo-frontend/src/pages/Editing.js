@@ -19,28 +19,37 @@ const RoundedContainer = styled.div`
   justify-content: center;
   align-items: center;
 `;
+const BlackBackground = styled.div`
+  background-color: #212121;
+`;
 
 function Editingpage() {
     const [textInput, setTextInput] = useState('');
     const [finalPositions, setFinalPositions] = useState([]);
     const [image, setImage] = useState(placeholderimg);
-  
+    const [imageBase64, setImageBase64] = useState('');
+
     const handleTextInputChange = (text) => {
       setTextInput(text);
     };
-  
+
     const handleFinalPositionsChange = (positions) => {
       setFinalPositions(positions);
     };
-  
+
+    const handleImageChange = (base64Image) => {
+      setImageBase64(base64Image);
+    };
+
     const handleGenerateImage = async () => {
       const payload = {
+        image_base64: imageBase64.split(',')[1], // Remove the prefix
         caption: textInput,
-        landmark: finalPositions.map(position => [position.x, position.y])
+        landmark: finalPositions.map(position => [position.x, position.y]),
       };
-  
+
       try {
-        const response = await axios.post('http://localhost:8000/imagetest', payload, {
+        const response = await axios.post('http://localhost:8000/editlandmark', payload, {
           responseType: 'blob'
         });
         console.log('Data sent to server successfully:', response.data);
@@ -50,37 +59,33 @@ function Editingpage() {
         console.error('Error sending data to server:', error);
       }
     };
-  
+
     return (
-      <div className="container-home">
-        <div className="container-section">
-          <RoundedContainer>
-            <h3>Image Editing</h3>
-            
-            <p>Move facial landmark by drag</p>
-            <Landmark onFinalPositionsChange={handleFinalPositionsChange} />
-            <p></p>
-            <p>Describe the Face you want to Edit</p>
-            <MultilineTextFields onTextInputChange={handleTextInputChange} />
-            <Button variant="dark" onClick={handleGenerateImage}>Generate Image</Button>
-          </RoundedContainer>
+      <BlackBackground>
+        <div className="container-home">
+          <div className="container-section">
+            <RoundedContainer>
+              <h3>Custom Image Editing</h3>
+              <h4><b>MasaCtrl</b></h4>
+              <p>Move facial landmark by drag</p>
+              <Landmark onFinalPositionsChange={handleFinalPositionsChange} onImageChange={handleImageChange} />
+              <p></p>
+              <p>Describe the Face you want to Edit</p>
+              <MultilineTextFields onTextInputChange={handleTextInputChange} />
+              <Button variant="dark" onClick={handleGenerateImage}>Generate Image</Button>
+            </RoundedContainer>
+          </div>
+          <div className="container-section">
+            <RoundedContainer>
+              <h3>Image Editing Result</h3>
+              <p></p>
+              <img src={image} alt="Generated result" />
+              <p></p>
+            </RoundedContainer>
+          </div>
         </div>
-        {/* <div className="container-section">
-        <h3>Generate your Image!</h3>
-          <p>You can generate human face image whatever you want. Try to change hair color, hair length, eye color, and the gender!</p>
-        </div> */}
-        <div className="container-section">
-          <RoundedContainer>
-            <h3>Image Editing Result</h3>
-            <p></p>
-            <img src={image} alt="Generated result" />
-            <p></p>
-  
-          </RoundedContainer>
-        </div>
-      </div>
+      </BlackBackground>
     );
-  }
-  
-  export default Editingpage;
-  
+}
+
+export default Editingpage;
