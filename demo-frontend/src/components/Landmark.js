@@ -222,133 +222,7 @@ const landmarks3 = {
 
 
 
-// const Landmark = ({ onFinalPositionsChange }) => {
-//   const initialCircles = Object.keys(landmarks).map(key => ({
-//     id: key,
-//     x: landmarks[key].x,
-//     y: landmarks[key].y 
-//   }));
-
-//   const [circles, setCircles] = useState(initialCircles);
-//   const [hoveredCircle, setHoveredCircle] = useState(null);
-//   const [image, setImage] = useState(null);
-//   const circleRefs = useRef([]);
-
-//   useEffect(() => {
-//     onFinalPositionsChange(circles);
-//   }, [circles, onFinalPositionsChange]);
-
-//   const handleStop = (e, data, index) => {
-//     const newCircles = [...circles];
-//     newCircles[index] = { ...newCircles[index], x: data.x, y: data.y };
-//     setCircles(newCircles);
-//   };
-
-//   const handleImageUpload = async (event) => {
-//     const file = event.target.files[0];
-//     if (file) {
-//         const formData = new FormData();
-//         formData.append('image', file);
-
-//         try {
-//             const response = await axios.post('http://localhost:8000/pointlandmark', formData);
-//             if (response.data.result === "issucess") {
-//                 const newLandmarks = response.data.landmark.map((point, index) => ({
-//                     id: index.toString(),
-//                     x: point[0],
-//                     y: point[1]
-//                 }));
-//                 setCircles(newLandmarks);
-//             }
-//         } catch (error) {
-//             console.error('Error uploading image and fetching landmarks:', error);
-//         }
-//     }
-// };
-
-
-//   // const handleImageUpload = async (event) => {
-//   //   const file = event.target.files[0];
-//   //   if (file) {
-//   //     const reader = new FileReader();
-//   //     reader.onloadend = async () => {
-//   //       const imageData = reader.result.substring(24);
-//   //       setImage(imageData);
-//   //       console.log(imageData)
-
-//   //       try {
-//   //         const response = await axios.post('http://localhost:8000/pointlandmark', { image: imageData });
-//   //         if (response.data.result === "issucess") {
-//   //           const newLandmarks = response.data.landmark.map((point, index) => ({
-//   //             id: index.toString(),
-//   //             x: point[0],
-//   //             y: point[1]
-//   //           }));
-//   //           setCircles(newLandmarks);
-//   //         }
-//   //       } catch (error) {
-//   //         console.error('Error uploading image and fetching landmarks:', error);
-//   //       }
-//   //     };
-//   //     reader.readAsDataURL(file);
-//   //   }
-//   // };
-
-//   return (
-//     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-//       <div style={{
-//         position: 'relative',
-//         width: '300px',
-//         height: '300px',
-//         border: '1px solid #BCBDC0',
-//         borderRadius: '10px',
-//         overflow: 'hidden', // Ensure the image respects the border radius
-//         backgroundSize: 'cover',
-//         backgroundPosition: 'center',
-//         backgroundImage: image ? `url(${image})` : 'none',
-//         margin: '20px 0' // Optional: Add some margin for better spacing
-//       }}>
-
-//         {circles.map((circle, index) => (
-//           <Draggable
-//             key={circle.id}
-//             defaultPosition={{ x: circle.x, y: circle.y }}
-//             onStop={(e, data) => handleStop(e, data, index)}
-//           >
-//             <div
-//               ref={el => circleRefs.current[index] = el}
-//               style={{
-//                 position: 'absolute',
-//                 width: '10px',
-//                 height: '10px',
-//                 borderRadius: '50%',
-//                 backgroundColor: hoveredCircle === index ? '#545454' : '#BCBDC0',
-//                 cursor: 'pointer'
-//               }}
-//               onMouseEnter={() => setHoveredCircle(index)}
-//               onMouseLeave={() => setHoveredCircle(null)}
-//             />
-//           </Draggable>
-//         ))}
-
-//       </div>
-//       <div>
-//         <input
-//           type="file"
-//           className="form-control"
-//           id="imageUpload"
-//           accept="image/*"
-//           onChange={handleImageUpload}
-//           style={{ width: '300px' }} // Set the width of the input button
-//         />
-//       </div>
-//     </div>
-//   );
-// };
-
-
-
-// const Landmark = ({ onFinalPositionsChange }) => {
+// const Landmark = ({ onFinalPositionsChange, onImageChange }) => {
 //   const initialCircles = Object.keys(landmarks).map(key => ({
 //     id: key,
 //     x: landmarks[key].x,
@@ -378,15 +252,16 @@ const landmarks3 = {
 //         const base64Image = reader.result.split(',')[1]; // Get base64 string without the prefix
 //         try {
 //           const response = await axios.post('http://localhost:8000/pointlandmark', { image_base64: base64Image });
-//           if (response.data) {
-//             console.log(response.data)
+//           if (response.data && response.data.isSuccess) {
+//             console.log(response.data);
 //             const newLandmarks = response.data.landmark.map((point, index) => ({
 //               id: index.toString(),
-//               x: point[0],
-//               y: point[1]
+//               x: point[0] * 299 / 256,
+//               y: point[1] * 299 / 256
 //             }));
 //             setCircles(newLandmarks);
-//             setImage(reader.result); // Set the uploaded image as the background
+//             setImage(response.data.resized_image); // Set the uploaded image as the background without prefix
+//             onImageChange(response.data.resized_image); // Pass the image data to the parent component
 //           }
 //         } catch (error) {
 //           console.error('Error uploading image and fetching landmarks:', error);
@@ -407,7 +282,7 @@ const landmarks3 = {
 //         overflow: 'hidden',
 //         backgroundSize: 'cover',
 //         backgroundPosition: 'center',
-//         backgroundImage: image ? `url(${image})` : 'none',
+//         backgroundImage: image ? `url(data:image/jpeg;base64,${image})` : 'none', // Add prefix here
 //         margin: '20px 0'
 //       }}>
 //         {circles.map((circle, index) => (
@@ -448,6 +323,212 @@ const landmarks3 = {
 
 // export default Landmark;
 
+
+// const Landmark = ({ onFinalPositionsChange, onImageChange }) => {
+//   const initialCircles = Object.keys(landmarks).map(key => ({
+//     id: key,
+//     x: landmarks[key].x,
+//     y: landmarks[key].y 
+//   }));
+
+//   const [circles, setCircles] = useState(initialCircles);
+//   const [hoveredCircle, setHoveredCircle] = useState(null);
+//   const [backgroundImage, setBackgroundImage] = useState(null); // Renamed for clarity
+//   const [originalImage, setOriginalImage] = useState(null);
+//   const circleRefs = useRef([]);
+
+//   useEffect(() => {
+//     onFinalPositionsChange(circles);
+//   }, [circles, onFinalPositionsChange]);
+
+//   const handleStop = (e, data, index) => {
+//     const newCircles = [...circles];
+//     newCircles[index] = { ...newCircles[index], x: data.x, y: data.y };
+//     setCircles(newCircles);
+//   };
+
+//   const handleImageUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (file) {
+//       const reader = new FileReader();
+//       reader.onloadend = async () => {
+//         const base64Image = reader.result.split(',')[1]; // Get base64 string without the prefix
+//         setOriginalImage(reader.result); // Store the original image
+//         try {
+//           const response = await axios.post('http://localhost:8000/pointlandmark', { image_base64: base64Image });
+//           if (response.data && response.data.isSuccess) {
+//             const newLandmarks = response.data.landmark.map((point, index) => ({
+//               id: index.toString(),
+//               x: point[0] * 299 / 256,
+//               y: point[1] * 299 / 256
+//             }));
+//             setCircles(newLandmarks);
+//             setBackgroundImage(`data:image/jpeg;base64,${response.data.resized_image}`); // Set the resized image
+//             onImageChange(reader.result); // Pass the original image data to the parent component
+//           }
+//         } catch (error) {
+//           console.error('Error uploading image and fetching landmarks:', error);
+//         }
+//       };
+//       reader.readAsDataURL(file); // Read the file as a data URL
+//     }
+//   };
+
+//   return (
+//     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+//       <div style={{
+//         position: 'relative',
+//         width: '300px',
+//         height: '300px',
+//         border: '1px solid #BCBDC0',
+//         borderRadius: '10px',
+//         overflow: 'hidden',
+//         backgroundSize: 'cover',
+//         backgroundPosition: 'center',
+//         backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+//         margin: '20px 0'
+//       }}>
+//         {circles.map((circle, index) => (
+//           <Draggable
+//             key={circle.id}
+//             defaultPosition={{ x: circle.x, y: circle.y }}
+//             onStop={(e, data) => handleStop(e, data, index)}
+//           >
+//             <div
+//               ref={el => circleRefs.current[index] = el}
+//               style={{
+//                 position: 'absolute',
+//                 width: '10px',
+//                 height: '10px',
+//                 borderRadius: '50%',
+//                 backgroundColor: hoveredCircle === index ? '#545454' : '#BCBDC0',
+//                 cursor: 'pointer'
+//               }}
+//               onMouseEnter={() => setHoveredCircle(index)}
+//               onMouseLeave={() => setHoveredCircle(null)}
+//             />
+//           </Draggable>
+//         ))}
+//       </div>
+//       <div>
+//         <input
+//           type="file"
+//           className="form-control"
+//           id="imageUpload"
+//           accept="image/*"
+//           onChange={handleImageUpload}
+//           style={{ width: '300px' }}
+//         />
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Landmark;
+
+// const Landmark = ({ onFinalPositionsChange, onImageChange }) => {
+//   const initialCircles = Object.keys(landmarks).map(key => ({
+//     id: key,
+//     x: landmarks[key].x,
+//     y: landmarks[key].y 
+//   }));
+
+//   const [circles, setCircles] = useState(initialCircles);
+//   const [hoveredCircle, setHoveredCircle] = useState(null);
+//   const [backgroundImage, setBackgroundImage] = useState(null);
+//   const circleRefs = useRef([]);
+
+//   useEffect(() => {
+//     onFinalPositionsChange(circles);
+//   }, [circles, onFinalPositionsChange]);
+
+//   const handleStop = (e, data, index) => {
+//     const newCircles = [...circles];
+//     newCircles[index] = { ...newCircles[index], x: data.x, y: data.y };
+//     setCircles(newCircles);
+//   };
+
+//   const handleImageUpload = async (event) => {
+//     const file = event.target.files[0];
+//     if (file) {
+//       const reader = new FileReader();
+//       reader.onloadend = async () => {
+//         const base64Image = reader.result.split(',')[1]; // Get base64 string without the prefix
+//         onImageChange(reader.result); // Pass the original image data to the parent component
+//         try {
+//           const response = await axios.post('http://localhost:8000/pointlandmark', { image_base64: base64Image });
+//           if (response.data && response.data.isSuccess) {
+//             const newLandmarks = response.data.landmark.map((point, index) => ({
+//               id: index.toString(),
+//               x: point[0] * 299 / 256,
+//               y: point[1] * 299 / 256
+//             }));
+//             setCircles(newLandmarks);
+//             setBackgroundImage(`data:image/jpeg;base64,${response.data.resized_image}`); // Set the resized image
+//           }
+//         } catch (error) {
+//           console.error('Error uploading image and fetching landmarks:', error);
+//         }
+//       };
+//       reader.readAsDataURL(file); // Read the file as a data URL
+//     }
+//   };
+
+//   return (
+//     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+//       <div style={{
+//         position: 'relative',
+//         width: '300px',
+//         height: '300px',
+//         border: '1px solid #BCBDC0',
+//         borderRadius: '10px',
+//         overflow: 'hidden',
+//         backgroundSize: 'cover',
+//         backgroundPosition: 'center',
+//         backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
+//         margin: '20px 0'
+//       }}>
+//         {circles.map((circle, index) => (
+//           <Draggable
+//             key={circle.id}
+//             defaultPosition={{ x: circle.x, y: circle.y }}
+//             onStop={(e, data) => handleStop(e, data, index)}
+//           >
+//             <div
+//               ref={el => circleRefs.current[index] = el}
+//               style={{
+//                 position: 'absolute',
+//                 width: '10px',
+//                 height: '10px',
+//                 borderRadius: '50%',
+//                 backgroundColor: hoveredCircle === index ? '#545454' : '#BCBDC0',
+//                 cursor: 'pointer'
+//               }}
+//               onMouseEnter={() => setHoveredCircle(index)}
+//               onMouseLeave={() => setHoveredCircle(null)}
+//             />
+//           </Draggable>
+//         ))}
+//       </div>
+//       <div>
+//         <input
+//           type="file"
+//           className="form-control"
+//           id="imageUpload"
+//           accept="image/*"
+//           onChange={handleImageUpload}
+//           style={{ width: '300px' }}
+//         />
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default Landmark;
+
+
+
+
 const Landmark = ({ onFinalPositionsChange, onImageChange }) => {
   const initialCircles = Object.keys(landmarks).map(key => ({
     id: key,
@@ -457,7 +538,7 @@ const Landmark = ({ onFinalPositionsChange, onImageChange }) => {
 
   const [circles, setCircles] = useState(initialCircles);
   const [hoveredCircle, setHoveredCircle] = useState(null);
-  const [image, setImage] = useState(null);
+  const [backgroundImage, setBackgroundImage] = useState(null);
   const circleRefs = useRef([]);
 
   useEffect(() => {
@@ -476,20 +557,19 @@ const Landmark = ({ onFinalPositionsChange, onImageChange }) => {
       const reader = new FileReader();
       reader.onloadend = async () => {
         const base64Image = reader.result.split(',')[1]; // Get base64 string without the prefix
+        onImageChange(reader.result); // Pass the original image data to the parent component
         try {
           const response = await axios.post('http://localhost:8000/pointlandmark', { image_base64: base64Image });
           if (response.data && response.data.isSuccess) {
-            console.log(response.data);
             const newLandmarks = response.data.landmark.map((point, index) => ({
               id: index.toString(),
-              x: point[0]*299/256,
+              x: point[0]*299/256, //* 299 / 256,
               y: point[1]*299/256
             }));
             setCircles(newLandmarks);
-            const resizedImageBase64 = `data:image/jpeg;base64,${response.data.resized_image}`;
-            setImage(resizedImageBase64); // Set the uploaded image as the background
-            onImageChange(resizedImageBase64); // Pass the image data to the parent component
+            setBackgroundImage(`data:image/jpeg;base64,${response.data.resized_image}`); // Set the resized image
           }
+          console.log('image landmark: ', response.data.landmark);
         } catch (error) {
           console.error('Error uploading image and fetching landmarks:', error);
         }
@@ -509,7 +589,7 @@ const Landmark = ({ onFinalPositionsChange, onImageChange }) => {
         overflow: 'hidden',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundImage: image ? `url(${image})` : 'none',
+        backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none',
         margin: '20px 0'
       }}>
         {circles.map((circle, index) => (

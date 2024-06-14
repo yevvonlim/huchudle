@@ -1,3 +1,4 @@
+// export default Editingpage;
 import React, { useState } from 'react';
 import '../App.css';
 import './Homepage.css';
@@ -23,14 +24,19 @@ const BlackBackground = styled.div`
   background-color: #212121;
 `;
 
-function Homepage() {
+function Editingpage2() {
     const [textInput, setTextInput] = useState('');
+    const [textInput2, setTextInput2] = useState('');
     const [finalPositions, setFinalPositions] = useState([]);
     const [image, setImage] = useState(placeholderimg);
-    const [originalImageBase64, setOriginalImageBase64] = useState('');
+    const [imageBase64, setImageBase64] = useState('');
 
     const handleTextInputChange = (text) => {
       setTextInput(text);
+    };
+
+      const handleTextInputChange2 = (text) => {
+      setTextInput2(text);
     };
 
     const handleFinalPositionsChange = (positions) => {
@@ -38,18 +44,20 @@ function Homepage() {
     };
 
     const handleImageChange = (base64Image) => {
-      setOriginalImageBase64(base64Image);
+      setImageBase64(base64Image);
     };
 
     const handleGenerateImage = async () => {
       const payload = {
-        image_base64: originalImageBase64.split(',')[1], // Remove the prefix
-        caption: textInput,
-        landmark: finalPositions.map(position => [position.x, position.y])
+        image_base64: imageBase64.split(',')[1], // Remove the prefix
+        og_caption: textInput,
+        new_caption: textInput2
+
       };
+      console.log('Sending data to server:', payload);
 
       try {
-        const response = await axios.post('http://localhost:8000/sample', payload, {
+        const response = await axios.post('http://localhost:8000/editprompt', payload, {
           responseType: 'blob'
         });
         console.log('Data sent to server successfully:', response.data);
@@ -65,21 +73,20 @@ function Homepage() {
         <div className="container-home">
           <div className="container-section">
             <RoundedContainer>
-              <h3>Custom Image Generation</h3>
+              <h3>Custom Image Editing</h3>
+              <h4><b>prompt2prompt</b></h4>
               <p>Move facial landmark by drag</p>
-              <Landmark 
-                onFinalPositionsChange={handleFinalPositionsChange} 
-                onImageChange={handleImageChange} 
-              />
+              <Landmark onFinalPositionsChange={handleFinalPositionsChange} onImageChange={handleImageChange} />
               <p></p>
-              <p>Describe the Face you want to generate</p>
+              <p>Describe the Face you want to Edit</p>
               <MultilineTextFields onTextInputChange={handleTextInputChange} />
+              <MultilineTextFields onTextInputChange={handleTextInputChange2} />
               <Button variant="dark" onClick={handleGenerateImage}>Generate Image</Button>
             </RoundedContainer>
           </div>
           <div className="container-section">
             <RoundedContainer>
-              <h3>Image Generation Result</h3>
+              <h3>Image Editing Result</h3>
               <p></p>
               <img src={image} alt="Generated result" />
               <p></p>
@@ -90,4 +97,4 @@ function Homepage() {
     );
 }
 
-export default Homepage;
+export default Editingpage2;
